@@ -9,7 +9,9 @@
       <h1 class="text-2xl font-semibold">
         Sign <span class="text-midnight-blue-900">in</span>
       </h1>
-      <Button variant="outlined" @click="oAuthLogin"
+      <Button
+        variant="outlined"
+        @click="auth.signInWithOAuth({ provider: 'github' })"
         ><Icon name="uil:github" class="h-5 w-5" />Sign in via GitHub
       </Button>
       <hr class="h-0.5 w-56 border-0 bg-midnight-blue-900" />
@@ -49,12 +51,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 definePageMeta({
   layout: "intro",
 });
 const user = useSupabaseUser();
-const client = useSupabaseAuthClient();
+const { auth } = useSupabaseAuthClient();
 
 watchEffect(() => {
   if (user.value) {
@@ -66,13 +68,8 @@ const email = ref("");
 const password = ref("");
 const errorMessage = ref("");
 
-const oAuthLogin = async () =>
-  await client.auth.signInWithOAuth({
-    provider: "github",
-  });
-
 const passwordLogin = async () => {
-  const { error } = await client.auth.signInWithPassword({
+  const { error } = await auth.signInWithPassword({
     email: email.value,
     password: password.value,
   });

@@ -5,11 +5,11 @@
   </div>
 </template>
 
-<script setup>
-const client = useSupabaseAuthClient();
+<script setup lang="ts">
+const { auth } = useSupabaseAuthClient();
 
 const signOut = async () => {
-  await client.auth.signOut();
+  await auth.signOut();
   navigateTo("/");
 };
 </script>
