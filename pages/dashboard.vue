@@ -8,10 +8,8 @@
 <script setup>
 const client = useSupabaseAuthClient();
 
-const router = useRouter();
-
 const signOut = async () => {
   await client.auth.signOut();
-  router.push("/");
+  navigateTo("/");
 };
 </script>

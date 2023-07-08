@@ -53,10 +53,14 @@
 definePageMeta({
   layout: "intro",
 });
-
+const user = useSupabaseUser();
 const client = useSupabaseAuthClient();
-const url = useRequestURL();
-const router = useRouter();
+
+watchEffect(() => {
+  if (user.value) {
+    navigateTo("/dashboard");
+  }
+});
 
 const email = ref("");
 const password = ref("");
@@ -65,7 +69,6 @@ const errorMessage = ref("");
 const oAuthLogin = async () =>
   await client.auth.signInWithOAuth({
     provider: "github",
-    options: { redirectTo: `${url.origin}/welcome` },
   });
 
 const passwordLogin = async () => {
@@ -77,7 +80,7 @@ const passwordLogin = async () => {
   if (error) {
     errorMessage.value = error.message;
   } else {
-    router.push("/dashboard");
+    navigateTo("/dashboard");
   }
 };
 </script>
