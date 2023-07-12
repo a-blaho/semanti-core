@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col w-screen h-screen items-center justify-center">
     <h1 class="text-6xl select-none p-4">
-      Semanti<span class="text-midnight-blue-900">/</span>core
+      semanti<span class="text-midnight-blue-900">/</span>core
     </h1>
 
     <div
@@ -23,22 +23,41 @@
         Sign in<span class="text-midnight-blue-900">/</span>up using just email
       </h1>
 
-      <form @submit.prevent="otpLogin" class="flex flex-col gap-2 items-center">
+      <form @submit.prevent="signIn" class="flex flex-col gap-2 items-center">
         <Input
           class="w-72"
           autocomplete="email"
           name="email"
-          placeholder="Email"
+          placeholder="Enter your email address"
           type="email"
           required="true"
           v-model="email"
+          :disabled="emailSent"
         />
 
-        <p class="text-midnight-blue-900 text-sm">{{ infoMessage }}</p>
-        <p class="text-red-500 text-sm">{{ errorMessage }}</p>
+        <Input
+          v-if="emailSent"
+          class="w-72"
+          autocomplete="one-time-code"
+          name="password"
+          placeholder="Enter the token you received via email"
+          type="text"
+          inputmode="numeric"
+          required="true"
+          v-model="token"
+        />
 
-        <Button type="submit">Sign in</Button>
+        <p
+          v-if="emailSent"
+          class="text-sm hover:cursor-pointer hover:underline text-midnight-blue-900"
+          @click="resetForm"
+        >
+          Use a different email
+        </p>
+
+        <Button :loading="loading" type="submit" class="w-72"> Sign in </Button>
       </form>
+      <p class="text-red-500 text-sm">{{ errorMessage }}</p>
     </div>
   </div>
 </template>
@@ -48,30 +67,58 @@ definePageMeta({
   layout: "intro",
 });
 
-const user = useSupabaseUser();
 const { auth } = useSupabaseAuthClient();
 
-watchEffect(() => {
-  if (user.value) {
-    navigateTo("/dashboard");
-  }
-});
+const emailSent = ref(false);
+const loading = ref(false);
 
 const email = ref("");
-const errorMessage = ref("");
-const infoMessage = ref("");
+const token = ref("");
 
-const otpLogin = async () => {
+const errorMessage = ref("");
+
+const signIn = async () => {
+  loading.value = true;
+  errorMessage.value = "";
+
+  if (!emailSent.value) {
+    await sendToken();
+  } else {
+    await verifyToken();
+  }
+
+  loading.value = false;
+};
+
+const sendToken = async () => {
   const { error } = await auth.signInWithOtp({
     email: email.value,
   });
 
   if (error) {
     errorMessage.value = error.message;
-    infoMessage.value = "";
   } else {
-    infoMessage.value = "Check your email for the magic link";
-    errorMessage.value = "";
+    emailSent.value = true;
   }
+};
+
+const verifyToken = async () => {
+  const { error } = await auth.verifyOtp({
+    email: email.value,
+    token: token.value,
+    type: "email",
+  });
+
+  if (error) {
+    errorMessage.value = error.message;
+  } else {
+    navigateTo("/dashboard");
+  }
+};
+
+const resetForm = () => {
+  emailSent.value = false;
+  errorMessage.value = "";
+  email.value = "";
 };
 </script>
