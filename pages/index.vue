@@ -10,7 +10,8 @@
       <Button
         variant="outlined"
         @click="auth.signInWithOAuth({ provider: 'github' })"
-        ><Icon name="uil:github" class="h-5 w-5" />Sign in via GitHub
+      >
+        <Icon name="uil:github" class="h-5 w-5" />Sign in via GitHub
       </Button>
 
       <div class="flex items-center gap-2">
