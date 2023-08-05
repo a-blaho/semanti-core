@@ -7,10 +7,7 @@
     <div
       class="border border-midnight-blue-800 border-2 bg-midnight-blue-50 rounded-md border-slate-950 px-8 py-4 flex flex-col items-center gap-4"
     >
-      <Button
-        variant="outlined"
-        @click="auth.signInWithOAuth({ provider: 'github' })"
-      >
+      <Button variant="outlined" @click="signInWithGithub">
         <Icon name="uil:github" class="h-5 w-5" />Sign in via GitHub
       </Button>
 
@@ -67,8 +64,8 @@
 definePageMeta({
   layout: "intro",
 });
-
-const { auth } = useSupabaseAuthClient();
+const user = useSupabaseUser();
+const { auth } = useSupabaseClient();
 
 const emailSent = ref(false);
 const loading = ref(false);
@@ -78,6 +75,23 @@ const token = ref("");
 
 const errorMessage = ref("");
 
+watchEffect(() => {
+  if (user.value) {
+    navigateTo("/dashboard");
+  }
+});
+const signInWithGithub = async () => {
+  const { error } = await auth.signInWithOAuth({ provider: "github" });
+
+  if (error) {
+    errorMessage.value = error.message;
+  } else {
+    await $fetch("/api/users", {
+      method: "POST",
+      headers: useRequestHeaders(["cookie"]),
+    });
+  }
+};
 const signIn = async () => {
   loading.value = true;
   errorMessage.value = "";
@@ -113,6 +127,10 @@ const verifyToken = async () => {
   if (error) {
     errorMessage.value = error.message;
   } else {
+    await $fetch("/api/users", {
+      method: "POST",
+      headers: useRequestHeaders(["cookie"]),
+    });
     navigateTo("/dashboard");
   }
 };
