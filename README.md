@@ -1,63 +1,26 @@
-# Nuxt 3 Minimal Starter
-
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+# semanti/core
+A CSV annotation tool using Nuxt3, Supabase and Headless UI with Tailwind CSS.
 
 ## Setup
-
-Make sure to install the dependencies:
-
-```bash
-# npm
+ 1. Create .env in the root dir with `SUPABASE_URL` & `SUPABASE_KEY`.
+ 2. Run the following commands
+```
 npm install
 
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
 ```
+3. Navigate to `localhost:3000` in your preferred browser.
 
-## Production
+## Links
+Useful links for development.
 
-Build the application for production:
+### Dashboards
+- [Supabase dashboard](https://supabase.com/dashboard/project/lesxqnnqwhvozaddezox)
+- [Vercel dashboard](https://vercel.com/a-blaho/semanti-core)
 
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+### Docs
+- [Supabase docs](https://supabase.com/docs)
+- [Nuxt3 docs](https://nuxt.com/docs)
+- [Nuxt Supabase docs](https://supabase.nuxtjs.org)
+- [Headless UI docs](https://headlessui.com)
+- [Tailwind cheatsheet](https://tailwindcomponents.com/cheatsheet/)
