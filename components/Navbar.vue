@@ -42,7 +42,7 @@
 </template>
 
 <script setup lang="ts">
-const { auth } = useSupabaseAuthClient();
+const { auth } = useSupabaseClient();
 const user = useSupabaseUser();
 
 const signOut = async () => {
