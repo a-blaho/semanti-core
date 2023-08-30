@@ -2,7 +2,7 @@ import { serverSupabaseClient, serverSupabaseUser } from "#supabase/server";
 import { Database } from "../../database.types";
 
 export default defineEventHandler(async (event) => {
-  const client = serverSupabaseClient<Database>(event);
+  const client = await serverSupabaseClient<Database>(event);
   const user = await serverSupabaseUser(event);
 
   if (!user || !user.email) {
