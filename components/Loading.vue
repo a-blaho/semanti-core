@@ -1,6 +1,7 @@
 <template>
   <svg
-    class="animate-spin h-5 w-5 text-midnight-blue-50"
+    class="animate-spin"
+    :class="class"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -20,3 +21,12 @@
     ></path>
   </svg>
 </template>
+
+<script setup lang="ts">
+defineProps({
+  class: {
+    type: String,
+    default: "h-5 w-5 text-midnight-blue-50",
+  },
+});
+</script>
