@@ -2,7 +2,7 @@
   <h1>Create new dataset</h1>
   <p>Step 1/3</p>
   <label
-    class="flex flex-col w-96 h-96 text-midnight-blue-900 bg-midnight-blue-100 hover:bg-midnight-blue-200 cursor-pointer border rounded-md justify-center items-center"
+    class="flex flex-col w-3/5 h-3/5 text-midnight-blue-900 bg-midnight-blue-200 hover:bg-midnight-blue-300 cursor-pointer border rounded-md justify-center items-center"
     @drop.prevent="handleDrop"
     @dragover.prevent
   >
