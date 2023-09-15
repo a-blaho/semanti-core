@@ -4,7 +4,9 @@
   >
     <NuxtLink to="/dashboard">semanti/core</NuxtLink>
     <div class="flex flex-col gap-2">
-      <p>Home</p>
+      <NuxtLink to="/new-dataset">New dataset</NuxtLink>
+      <br />
+      <NuxtLink to="/dashboard">Home</NuxtLink>
       <p>My datasets</p>
       <p>Shared with me</p>
       <p>Browse</p>
