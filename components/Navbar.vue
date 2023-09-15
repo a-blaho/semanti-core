@@ -1,57 +1,17 @@
 <template>
   <div
-    class="px-4 flex fixed top-0 left-0 h-16 w-screen bg-midnight-blue-950 items-center justify-between"
+    class="flex flex-col fixed top-0 left-0 h-screen w-48 bg-midnight-blue-950 items-center justify-between py-8 text-white"
   >
-    <p class="text-white">semanti/core</p>
-    <Input
-      class="w-96"
-      name="search"
-      placeholder="Search datasets"
-      type="text"
-      v-model="search"
-    />
-    <HeadlessMenu>
-      <HeadlessMenuButton class="relative">
-        <Icon
-          @click="console.log('hello')"
-          name="mdi:person"
-          class="h-12 w-12 text-white cursor-pointer border rounded-full p-1"
-        />
-      </HeadlessMenuButton>
-      <HeadlessMenuItems class="absolute right-0 top-12">
-        <div
-          class="bg-white border-midnight-blue-900 p-4 border rounded-md m-4 text-midnight-blue-900"
-        >
-          <HeadlessMenuItem>
-            <p>{{ user?.email }}</p>
-          </HeadlessMenuItem>
-          <hr class="my-2" />
-          <HeadlessMenuItem :class="menuItemClass">
-            <p>Profile</p>
-          </HeadlessMenuItem>
-          <HeadlessMenuItem :class="menuItemClass">
-            <p>Settings</p>
-          </HeadlessMenuItem>
-          <HeadlessMenuItem :class="menuItemClass"
-            ><p @click="signOut">Log out</p>
-          </HeadlessMenuItem>
-        </div>
-      </HeadlessMenuItems>
-    </HeadlessMenu>
+    <NuxtLink to="/dashboard">semanti/core</NuxtLink>
+    <div class="flex flex-col gap-2">
+      <p>Home</p>
+      <p>My datasets</p>
+      <p>Shared with me</p>
+      <p>Browse</p>
+    </div>
+
+    <p>Settings</p>
   </div>
 </template>
 
-<script setup lang="ts">
-const { auth } = useSupabaseClient();
-const user = useSupabaseUser();
-
-const signOut = async () => {
-  await auth.signOut();
-  navigateTo("/");
-};
-
-const menuItemClass =
-  "hover:bg-midnight-blue-950 hover:cursor-pointer hover:text-white rounded p-2";
-
-const search = ref("");
-</script>
+<script setup lang="ts"></script>
