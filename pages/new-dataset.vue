@@ -86,11 +86,11 @@
   </form>
 
   <form
-    class="bg-midnight-blue-200 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100 overflow-auto"
+    class="bg-midnight-blue-200 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
     v-if="stage === 4"
     @submit.prevent="uploadDataset"
   >
-    <div class="grid grid-cols-5 gap-4">
+    <div class="grid grid-cols-5 gap-4 overflow-auto w-full">
       <template v-for="(column, index) in columns">
         <div class="flex items-center">
           <label class="font-mono truncate" :for="column + '-' + index">
@@ -100,7 +100,6 @@
 
         <div>
           <Input
-            class="w-40"
             :name="'name-' + index"
             placeholder="Name"
             v-model="names[index]"
@@ -111,7 +110,6 @@
 
         <div>
           <Input
-            class="w-40"
             :name="'description-' + index"
             placeholder="Description"
             v-model="descriptions[index]"
@@ -122,7 +120,6 @@
 
         <div>
           <Input
-            class="w-40"
             :name="'type-' + index"
             placeholder="Data type"
             v-model="types[index]"
@@ -133,7 +130,6 @@
 
         <div>
           <Input
-            class="w-40"
             :name="'category-' + index"
             placeholder="Data category"
             v-model="categories[index]"
@@ -174,10 +170,11 @@ const descriptions = ref<Array<string>>([]);
 const types = ref<Array<string>>([]);
 const categories = ref<Array<string>>([]);
 
-const handleDrop = (event: DragEvent) => processFile(event.dataTransfer?.files);
-const handleInput = () => processFile(input.value?.files);
+const handleDrop = (event: DragEvent) =>
+  processFiles(event.dataTransfer?.files);
+const handleInput = () => processFiles(input.value?.files);
 
-const processFile = async (files: FileList | undefined | null) => {
+const processFiles = async (files: FileList | undefined | null) => {
   if (files == null) {
     return;
   }
@@ -193,12 +190,32 @@ const processFile = async (files: FileList | undefined | null) => {
     errorMessage.value = "Please upload a CSV file";
     return;
   }
+
   nextStage();
 
-  const text = await file.text();
-  const parsed: Array<Array<string>> = parse(text);
+  const stream = file.stream();
+  const reader = stream.getReader();
+  let firstLine = "";
 
-  columns.value = parsed[0];
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    const chunk = new TextDecoder("utf-8").decode(value);
+    const index = chunk.indexOf("\n");
+
+    if (index !== -1) {
+      firstLine += chunk.substring(0, index);
+      await reader.cancel();
+      break;
+    }
+    firstLine += chunk;
+  }
+
+  columns.value = parse(firstLine)[0];
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   nextStage();
