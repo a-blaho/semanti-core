@@ -55,7 +55,7 @@
     @submit.prevent="nextStage"
   >
     <div class="w-full flex justify-between">
-      <Input
+      <TextInput
         class="w-3/4"
         name="datasetName"
         placeholder="Dataset name"
@@ -99,7 +99,7 @@
         </div>
 
         <div>
-          <Input
+          <TextInput
             :name="'name-' + index"
             placeholder="Name"
             v-model="names[index]"
@@ -109,7 +109,7 @@
         </div>
 
         <div>
-          <Input
+          <TextInput
             :name="'description-' + index"
             placeholder="Description"
             v-model="descriptions[index]"
@@ -119,23 +119,50 @@
         </div>
 
         <div>
-          <Input
-            :name="'type-' + index"
+          <SelectInput
             placeholder="Data type"
-            v-model="types[index]"
+            :name="'type-' + index"
             required
             autocomplete="off"
-          />
+            v-model="types[index]"
+          >
+            <option value="string">String</option>
+            <option value="number">Number</option>
+            <option value="boolean">Boolean</option>
+            <option value="date">Date</option>
+          </SelectInput>
         </div>
 
         <div>
-          <Input
-            :name="'category-' + index"
-            placeholder="Data category"
-            v-model="categories[index]"
+          <SelectInput
+            placeholder="Dataset category"
+            :name="'type-' + index"
             required
             autocomplete="off"
-          />
+            v-model="categories[index]"
+          >
+            <optgroup label="Numerical values">
+              <option value="price">Price</option>
+              <option value="quantity">Quantity</option>
+              <option value="rating">Rating</option>
+              <option value="percentage">Percentage</option>
+              <option value="count">Count</option>
+            </optgroup>
+            <optgroup label="Date and time">
+              <option value="Start of">Start of</option>
+              <option value="End of">End of</option>
+              <option value="Duration">Duration</option>
+            </optgroup>
+            <optgroup label="Geographical">
+              <option value="Country">Country</option>
+              <option value="State">State</option>
+              <option value="City">City</option>
+              <option value="Address">Address</option>
+              <option value="Zip code">Zip code</option>
+              <option value="Latitude">Latitude</option>
+              <option value="Longitude">Longitude</option>
+            </optgroup>
+          </SelectInput>
         </div>
       </template>
     </div>
@@ -227,9 +254,14 @@ const nextStage = () => stage.value++;
 
 const resetStages = () => {
   stage.value = 1;
+
   datasetName.value = "";
   datasetDescription.value = "";
-  names.value = [];
+
+  names.value.length = 0;
+  descriptions.value.length = 0;
+  types.value.length = 0;
+  categories.value.length = 0;
 };
 
 const uploadDataset = () => {

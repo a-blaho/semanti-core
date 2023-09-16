@@ -22,7 +22,7 @@
       </h1>
 
       <form @submit.prevent="signIn" class="flex flex-col gap-2 items-center">
-        <Input
+        <TextInput
           class="w-72"
           autocomplete="email"
           name="email"
@@ -33,7 +33,7 @@
           :disabled="emailSent"
         />
 
-        <Input
+        <TextInput
           v-if="emailSent"
           class="w-72"
           autocomplete="one-time-code"
