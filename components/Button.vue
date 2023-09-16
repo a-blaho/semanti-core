@@ -11,9 +11,9 @@
     @click="$emit('click')"
   >
     <div class="flex items-center gap-2">
-      <Loading class="invisible" />
+      <Loading v-if="false" />
       <slot />
-      <Loading :class="{ invisible: !loading }" />
+      <Loading v-if="loading" />
     </div>
   </button>
 </template>
