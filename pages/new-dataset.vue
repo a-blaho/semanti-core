@@ -197,6 +197,14 @@ const descriptions = ref<Array<string>>([]);
 const types = ref<Array<string>>([]);
 const categories = ref<Array<string>>([]);
 
+onBeforeRouteLeave((to, from) => {
+  if (stage.value === 1) return true;
+
+  return confirm(
+    "Are you sure you want to leave this page? All progress will be lost."
+  );
+});
+
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
 const handleInput = () => processFiles(input.value?.files);
