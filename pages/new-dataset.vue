@@ -25,7 +25,7 @@
 
   <label
     v-if="stage === 1"
-    class="flex flex-col w-3/4 h-3/4 text-midnight-blue-900 bg-midnight-blue-200 hover:bg-midnight-blue-300 cursor-pointer border rounded-md justify-center items-center"
+    class="flex flex-col w-3/4 h-3/4 text-midnight-blue-900 bg-midnight-blue-300 hover:border-midnight-blue-900 cursor-pointer border rounded-md border-midnight-blue-100 justify-center items-center"
     @drop.prevent="handleDrop"
     @dragover.prevent
   >
@@ -44,14 +44,14 @@
 
   <div
     v-if="stage === 2"
-    class="flex flex-col items-center justify-center text-midnight-blue-950 w-3/4 h-3/4"
+    class="flex flex-col items-center justify-center bg-midnight-blue-300 text-midnight-blue-950 w-3/4 h-3/4 border rounded-md border-midnight-blue-100"
   >
     <Loading class="text-midnight-blue-950 w-64 h-64" />
   </div>
 
   <form
     v-if="stage === 3"
-    class="bg-midnight-blue-200 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
+    class="bg-midnight-blue-300 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
     @submit.prevent="nextStage"
   >
     <div class="w-full flex justify-between">
@@ -86,7 +86,7 @@
   </form>
 
   <form
-    class="bg-midnight-blue-200 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
+    class="bg-midnight-blue-300 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
     v-if="stage === 4"
     @submit.prevent="uploadDataset"
   >
@@ -98,72 +98,62 @@
           </label>
         </div>
 
-        <div>
-          <TextInput
-            :name="'name-' + index"
-            placeholder="Name"
-            v-model="names[index]"
-            required
-            autocomplete="off"
-          />
-        </div>
+        <TextInput
+          :name="'name-' + index"
+          placeholder="Name"
+          v-model="names[index]"
+          required
+          autocomplete="off"
+        />
 
-        <div>
-          <TextInput
-            :name="'description-' + index"
-            placeholder="Description"
-            v-model="descriptions[index]"
-            required
-            autocomplete="off"
-          />
-        </div>
+        <TextInput
+          :name="'description-' + index"
+          placeholder="Description"
+          v-model="descriptions[index]"
+          required
+          autocomplete="off"
+        />
 
-        <div>
-          <SelectInput
-            placeholder="Data type"
-            :name="'type-' + index"
-            required
-            autocomplete="off"
-            v-model="types[index]"
-          >
-            <option value="string">String</option>
-            <option value="number">Number</option>
-            <option value="boolean">Boolean</option>
-            <option value="date">Date</option>
-          </SelectInput>
-        </div>
+        <SelectInput
+          placeholder="Data type"
+          :name="'type-' + index"
+          required
+          v-model="types[index]"
+        >
+          <option value="string">String</option>
+          <option value="number">Number</option>
+          <option value="boolean">Boolean</option>
+          <option value="date">Date</option>
+        </SelectInput>
 
-        <div>
-          <SelectInput
-            placeholder="Dataset category"
-            :name="'type-' + index"
-            required
-            autocomplete="off"
-            v-model="categories[index]"
-          >
-            <optgroup label="Numerical values">
-              <option value="price">Price</option>
-              <option value="quantity">Quantity</option>
-              <option value="rating">Rating</option>
-              <option value="percentage">Percentage</option>
-              <option value="count">Count</option>
-            </optgroup>
-            <optgroup label="Date and time">
-              <option value="Start of">Start of</option>
-              <option value="End of">End of</option>
-              <option value="Duration">Duration</option>
-            </optgroup>
-            <optgroup label="Geographical">
-              <option value="Country">Country</option>
-              <option value="State">State</option>
-              <option value="City">City</option>
-              <option value="Address">Address</option>
-              <option value="Zip code">Zip code</option>
-              <option value="Latitude">Latitude</option>
-              <option value="Longitude">Longitude</option>
-            </optgroup>
-          </SelectInput>
-        </div>
+        <SelectInput
+          placeholder="Dataset category"
+          :name="'type-' + index"
+          required
+          v-model="categories[index]"
+        >
+          <optgroup label="Numerical values">
+            <option value="price">Price</option>
+            <option value="quantity">Quantity</option>
+            <option value="rating">Rating</option>
+            <option value="percentage">Percentage</option>
+            <option value="count">Count</option>
+          </optgroup>
+          <optgroup label="Date and time">
+            <option value="Start of">Start of</option>
+            <option value="End of">End of</option>
+            <option value="Duration">Duration</option>
+          </optgroup>
+          <optgroup label="Geographical">
+            <option value="Country">Country</option>
+            <option value="State">State</option>
+            <option value="City">City</option>
+            <option value="Address">Address</option>
+            <option value="Zip code">Zip code</option>
+            <option value="Latitude">Latitude</option>
+            <option value="Longitude">Longitude</option>
+          </optgroup>
+        </SelectInput>
       </template>
     </div>
     <br />
