@@ -9,16 +9,18 @@ export default defineEventHandler(async (event) => {
     getUser(event),
   ]);
 
-  const files = await readMultipartFormData(event);
+  const data = await readMultipartFormData(event);
 
-  if (!files || files.length === 0) {
+  if (!data || data.length === 0) {
     throw createError({
       statusCode: 400,
       statusMessage: "Missing data",
     });
   }
 
-  const dataset = files[0];
+  const dataset = data[0];
+  const metadata = JSON.parse(data[1].data.toString());
+
   if (dataset.type !== "text/csv") {
     throw createError({
       statusCode: 400,
@@ -28,14 +30,48 @@ export default defineEventHandler(async (event) => {
 
   const datasetId = randomUUID();
 
-  const { error: storageError } = await storage
+  const { error: datasetStorageError } = await storage
     .from("datasets")
-    .upload(datasetId, dataset.data);
+    .upload(`${datasetId}/${datasetId}.csv`, dataset.data, {
+      contentType: "text/csv",
+    });
 
-  if (storageError) {
+  if (datasetStorageError) {
     throw createError({
       statusCode: 500,
-      statusMessage: storageError.message,
+      statusMessage: datasetStorageError.message,
+    });
+  }
+
+  const metadataFile = {
+    "@context": "http://www.w3.org/ns/csvw",
+    url: `${datasetId}.csv`,
+    "dc:title": metadata.name,
+    "dc:description": metadata.description,
+    tableSchema: {
+      columns: metadata.columns.map((column: any) => ({
+        titles: column.title,
+        "dc:title": column.name,
+        "dc:description": column.description,
+        datatype: column.dataType,
+      })),
+    },
+  };
+
+  const { error: metadataStorageError } = await storage
+    .from("datasets")
+    .upload(
+      `${datasetId}/${datasetId}.csv-metadata.json`,
+      JSON.stringify(metadataFile),
+      { contentType: "application/csvm+json" }
+    );
+
+  if (metadataStorageError) {
+    await storage.from("datasets").remove([datasetId]);
+
+    throw createError({
+      statusCode: 500,
+      statusMessage: metadataStorageError.message,
     });
   }
 
@@ -43,6 +79,7 @@ export default defineEventHandler(async (event) => {
     id: datasetId,
     name: dataset.filename?.split(".")[0] ?? "Dataset",
     owner: user.id,
+    public: metadata.public,
   });
 
   if (databaseError) {

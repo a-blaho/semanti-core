@@ -15,18 +15,21 @@ export interface Database {
           id: string;
           name: string | null;
           owner: string | null;
+          public: boolean | null;
         };
         Insert: {
           created_at?: string;
           id: string;
           name?: string | null;
           owner?: string | null;
+          public?: boolean | null;
         };
         Update: {
           created_at?: string;
           id?: string;
           name?: string | null;
           owner?: string | null;
+          public?: boolean | null;
         };
         Relationships: [
           {

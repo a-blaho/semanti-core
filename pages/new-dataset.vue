@@ -25,7 +25,8 @@
 
   <label
     v-if="stage === 1"
-    class="flex flex-col w-3/4 h-3/4 text-midnight-blue-900 bg-midnight-blue-300 hover:border-midnight-blue-900 cursor-pointer border rounded-md border-midnight-blue-100 justify-center items-center"
+    class="flex flex-col hover:border-midnight-blue-900 cursor-pointer justify-center items-center"
+    :class="commonStyle"
     @drop.prevent="handleDrop"
     @dragover.prevent
   >
@@ -36,7 +37,7 @@
       id="dropzone"
       class="hidden"
       type="file"
-      ref="input"
+      ref="fileInput"
       accept=".csv"
     />
     <p class="text-red-500 text-sm">{{ errorMessage }}</p>
@@ -44,14 +45,16 @@
 
   <div
     v-if="stage === 2"
-    class="flex flex-col items-center justify-center bg-midnight-blue-300 text-midnight-blue-950 w-3/4 h-3/4 border rounded-md border-midnight-blue-100"
+    class="flex flex-col items-center justify-center"
+    :class="commonStyle"
   >
     <Loading class="text-midnight-blue-950 w-64 h-64" />
   </div>
 
   <form
     v-if="stage === 3"
-    class="bg-midnight-blue-300 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
+    class="flex flex-col items-center justify-between gap-2 px-8 py-4"
+    :class="commonStyle"
     @submit.prevent="nextStage"
   >
     <div class="w-full flex justify-between">
@@ -65,7 +68,7 @@
       />
 
       <div class="flex gap-1 items-center">
-        <input type="checkbox" id="public" />
+        <input v-model="publicDataset" type="checkbox" id="public" />
         <label for="public">Public dataset</label>
       </div>
     </div>
@@ -86,7 +89,8 @@
   </form>
 
   <form
-    class="bg-midnight-blue-300 w-3/4 h-3/4 flex flex-col items-center justify-between gap-2 px-8 py-4 border rounded-md border-midnight-blue-100"
+    class="flex flex-col items-center justify-between gap-2 px-8 py-4"
+    :class="commonStyle"
     v-if="stage === 4"
     @submit.prevent="uploadDataset"
   >
@@ -118,12 +122,15 @@
           placeholder="Data type"
           :name="'type-' + index"
           required
-          v-model="types[index]"
+          v-model="dataTypes[index]"
         >
-          <option value="string">String</option>
-          <option value="number">Number</option>
           <option value="boolean">Boolean</option>
           <option value="date">Date</option>
+          <option value="datetime">Datetime</option>
+          <option value="duration">Duration</option>
+          <option value="number">Number</option>
+          <option value="string">String</option>
+          <option value="time">Time</option>
         </SelectInput>
 
         <SelectInput
@@ -174,20 +181,27 @@ definePageMeta({
   layout: "dashboard",
 });
 
-const input = ref<HTMLInputElement | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null);
+
 const errorMessage = ref("");
 const stage = ref(1);
 const columns = ref<Array<string>>([]);
 
+let datasetFile: File | null = null;
+
+const publicDataset = ref(false);
 const datasetName = ref("");
 const datasetDescription = ref("");
 
 const names = ref<Array<string>>([]);
 const descriptions = ref<Array<string>>([]);
-const types = ref<Array<string>>([]);
+const dataTypes = ref<Array<string>>([]);
 const categories = ref<Array<string>>([]);
 
-onBeforeRouteLeave((to, from) => {
+const commonStyle =
+  "bg-midnight-blue-200 text-midnight-blue-950 border rounded-md border-midnight-blue-100 w-3/4 h-3/4 ";
+
+onBeforeRouteLeave(() => {
   if (stage.value === 1) return true;
 
   return confirm(
@@ -197,7 +211,7 @@ onBeforeRouteLeave((to, from) => {
 
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
-const handleInput = () => processFiles(input.value?.files);
+const handleInput = () => processFiles(fileInput.value?.files);
 
 const processFiles = async (files: FileList | undefined | null) => {
   if (files == null) {
@@ -209,16 +223,16 @@ const processFiles = async (files: FileList | undefined | null) => {
     return;
   }
 
-  const file = files[0];
+  datasetFile = files[0];
 
-  if (file.type !== "text/csv") {
+  if (datasetFile.type !== "text/csv") {
     errorMessage.value = "Please upload a CSV file";
     return;
   }
 
   nextStage();
 
-  const stream = file.stream();
+  const stream = datasetFile.stream();
   const reader = stream.getReader();
   let firstLine = "";
 
@@ -253,31 +267,40 @@ const nextStage = () => stage.value++;
 const resetStages = () => {
   stage.value = 1;
 
+  publicDataset.value = false;
   datasetName.value = "";
   datasetDescription.value = "";
 
   names.value.length = 0;
   descriptions.value.length = 0;
-  types.value.length = 0;
+  dataTypes.value.length = 0;
   categories.value.length = 0;
 };
 
-const uploadDataset = () => {
-  console.log({
-    datasetName: datasetName.value,
-    datasetDescription: datasetDescription.value,
-    names: names.value,
-    descriptions: descriptions.value,
-    types: types.value,
-    categories: categories.value,
+const uploadDataset = async () => {
+  if (datasetFile == null) return;
+
+  const formData = new FormData();
+
+  const metadata = {
+    public: publicDataset.value,
+    name: datasetName.value,
+    description: datasetDescription.value,
+    columns: columns.value.map((_, index) => ({
+      title: columns.value[index],
+      name: names.value[index],
+      description: descriptions.value[index],
+      datatype: dataTypes.value[index],
+      category: categories.value[index],
+    })),
+  };
+
+  formData.append("dataset", datasetFile);
+  formData.append("metadata", JSON.stringify(metadata));
+
+  await $fetch("/api/dataset", {
+    method: "POST",
+    body: formData,
   });
-
-  // const formData = new FormData();
-  // formData.append("file", csvFile);
-
-  // await $fetch("/api/dataset", {
-  //   method: "POST",
-  //   body: formData,
-  // });
 };
 </script>
