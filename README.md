@@ -15,12 +15,13 @@ npm run dev
 Useful links for development.
 
 ### Dashboards
+- [Resend dashboard](https://resend.com/overview)
 - [Supabase dashboard](https://supabase.com/dashboard/project/lesxqnnqwhvozaddezox)
 - [Vercel dashboard](https://vercel.com/a-blaho/semanti-core)
 
 ### Docs
-- [Supabase docs](https://supabase.com/docs)
+- [Headless UI docs](https://headlessui.com)
 - [Nuxt3 docs](https://nuxt.com/docs)
 - [Nuxt Supabase docs](https://supabase.nuxtjs.org)
-- [Headless UI docs](https://headlessui.com)
+- [Supabase docs](https://supabase.com/docs)
 - [Tailwind cheatsheet](https://tailwindcomponents.com/cheatsheet/)
