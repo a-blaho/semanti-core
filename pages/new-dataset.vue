@@ -2,85 +2,45 @@
   <h1 class="text-2xl text-midnight-blue-950">
     {{
       stage === 1
-        ? "Upload your dataset"
-        : stage === 2
+      ? "Upload your dataset"
+      : stage === 2
         ? "Analyzing your file"
         : stage === 3
-        ? "Dataset information"
-        : "Columns information"
+          ? "Dataset information"
+          : "Columns information"
     }}
   </h1>
   <div class="flex">
-    <Icon
-      name="octicon:dot-fill-24"
-      v-for="_ of stage"
-      class="text-midnight-blue-950 h-8 w-8"
-    />
-    <Icon
-      name="octicon:dot-24"
-      v-for="_ of 4 - stage"
-      class="text-midnight-blue-950 h-8 w-8"
-    />
+    <Icon name="octicon:dot-fill-24" v-for="_ of stage" class="text-midnight-blue-950 h-8 w-8" />
+    <Icon name="octicon:dot-24" v-for="_ of 4 - stage" class="text-midnight-blue-950 h-8 w-8" />
   </div>
 
-  <label
-    v-if="stage === 1"
-    class="flex flex-col hover:border-midnight-blue-900 cursor-pointer justify-center items-center"
-    :class="commonStyle"
-    @drop.prevent="handleDrop"
-    @dragover.prevent
-  >
+  <label v-if="stage === 1"
+    class="flex flex-col hover:border-midnight-blue-900 cursor-pointer justify-center items-center" :class="commonStyle"
+    @drop.prevent="handleDrop" @dragover.prevent>
     <Icon name="uil:upload" class="w-16 h-16" />
     <p>Click to upload or drop your CSV file here</p>
-    <input
-      @input="handleInput"
-      id="dropzone"
-      class="hidden"
-      type="file"
-      ref="fileInput"
-      accept=".csv"
-    />
+    <input @input="handleInput" id="dropzone" class="hidden" type="file" ref="fileInput" accept=".csv" />
     <p class="text-red-500 text-sm">{{ errorMessage }}</p>
   </label>
 
-  <div
-    v-if="stage === 2"
-    class="flex flex-col items-center justify-center"
-    :class="commonStyle"
-  >
+  <div v-if="stage === 2" class="flex flex-col items-center justify-center" :class="commonStyle">
     <Loading class="text-midnight-blue-950 w-64 h-64" />
   </div>
 
-  <form
-    v-if="stage === 3"
-    class="flex flex-col items-center justify-between gap-2 px-8 py-4"
-    :class="commonStyle"
-    @submit.prevent="nextStage"
-  >
+  <form v-if="stage === 3" class="flex flex-col items-center justify-between gap-2 px-8 py-4" :class="commonStyle"
+    @submit.prevent="nextStage">
     <div class="w-full flex justify-between">
-      <TextInput
-        class="w-3/4"
-        name="datasetName"
-        placeholder="Dataset name"
-        required
-        v-model="datasetName"
-        autocomplete="off"
-      />
+      <TextInput class="w-3/4" name="datasetName" placeholder="Dataset name" required v-model="datasetName"
+        autocomplete="off" />
 
       <div class="flex gap-1 items-center">
         <input v-model="publicDataset" type="checkbox" id="public" />
         <label for="public">Public dataset</label>
       </div>
     </div>
-    <textarea
-      name="datasetDescription"
-      placeholder="Dataset description"
-      v-model="datasetDescription"
-      cols="75"
-      rows="12"
-      required
-      class="border rounded-md p-1 w-full h-full focus:outline-none focus:border-midnight-blue-900"
-    >
+    <textarea name="datasetDescription" placeholder="Dataset description" v-model="datasetDescription" cols="75" rows="12"
+      required class="border rounded-md p-1 w-full h-full focus:outline-none focus:border-midnight-blue-900">
     </textarea>
     <div class="flex items-center w-full justify-between">
       <Button @click="resetStages" variant="outlined">Cancel</Button>
@@ -88,12 +48,8 @@
     </div>
   </form>
 
-  <form
-    class="flex flex-col items-center justify-between gap-2 px-8 py-4"
-    :class="commonStyle"
-    v-if="stage === 4"
-    @submit.prevent="uploadDataset"
-  >
+  <form class="flex flex-col items-center justify-between gap-2 px-8 py-4" :class="commonStyle" v-if="stage === 4"
+    @submit.prevent="uploadDataset">
     <div class="grid grid-cols-5 gap-4 overflow-auto w-full">
       <template v-for="(column, index) in columns">
         <div class="flex items-center">
@@ -102,28 +58,12 @@
           </label>
         </div>
 
-        <TextInput
-          :name="'name-' + index"
-          placeholder="Name"
-          v-model="names[index]"
-          required
-          autocomplete="off"
-        />
+        <TextInput :name="'name-' + index" placeholder="Name" v-model="names[index]" required autocomplete="off" />
 
-        <TextInput
-          :name="'description-' + index"
-          placeholder="Description"
-          v-model="descriptions[index]"
-          required
-          autocomplete="off"
-        />
+        <TextInput :name="'description-' + index" placeholder="Description" v-model="descriptions[index]" required
+          autocomplete="off" />
 
-        <SelectInput
-          placeholder="Data type"
-          :name="'type-' + index"
-          required
-          v-model="dataTypes[index]"
-        >
+        <SelectInput placeholder="Data type" :name="'type-' + index" required v-model="dataTypes[index]">
           <option value="boolean">Boolean</option>
           <option value="date">Date</option>
           <option value="datetime">Datetime</option>
@@ -133,12 +73,7 @@
           <option value="time">Time</option>
         </SelectInput>
 
-        <SelectInput
-          placeholder="Dataset category"
-          :name="'type-' + index"
-          required
-          v-model="categories[index]"
-        >
+        <SelectInput placeholder="Dataset category" :name="'type-' + index" required v-model="categories[index]">
           <optgroup label="Numerical values">
             <option value="price">Price</option>
             <option value="quantity">Quantity</option>
@@ -229,6 +164,10 @@ const processFiles = async (files: FileList | undefined | null) => {
     errorMessage.value = "Please upload a CSV file";
     return;
   }
+  if (datasetFile.size > 6000) {
+    errorMessage.value = "Files up to 6MB are supported";
+    return;
+  }
 
   nextStage();
 
@@ -298,7 +237,7 @@ const uploadDataset = async () => {
   formData.append("dataset", datasetFile);
   formData.append("metadata", JSON.stringify(metadata));
 
-  await $fetch("/api/dataset", {
+  await $fetch("/api/datasets", {
     method: "POST",
     body: formData,
   });

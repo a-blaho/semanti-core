@@ -3,8 +3,7 @@ import { randomUUID } from "crypto";
 import { Database } from "~/database.types";
 
 export default defineEventHandler(async (event) => {
-  const [{ storage }, client, user] = await Promise.all([
-    serverSupabaseClient(event),
+  const [client, user] = await Promise.all([
     serverSupabaseClient<Database>(event),
     getUser(event),
   ]);
@@ -30,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
   const datasetId = randomUUID();
 
-  const { error: datasetStorageError } = await storage
+  const { error: datasetStorageError } = await client.storage
     .from("datasets")
     .upload(`${datasetId}/${datasetId}.csv`, dataset.data, {
       contentType: "text/csv",
@@ -43,47 +42,29 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const metadataFile = {
-    "@context": "http://www.w3.org/ns/csvw",
-    url: `${datasetId}.csv`,
-    "dc:title": metadata.name,
-    "dc:description": metadata.description,
-    tableSchema: {
-      columns: metadata.columns.map((column: any) => ({
-        titles: column.title,
-        "dc:title": column.name,
-        "dc:description": column.description,
-        datatype: column.dataType,
-      })),
-    },
-  };
-
-  const { error: metadataStorageError } = await storage
-    .from("datasets")
-    .upload(
-      `${datasetId}/${datasetId}.csv-metadata.json`,
-      JSON.stringify(metadataFile),
-      { contentType: "application/csvm+json" }
-    );
-
-  if (metadataStorageError) {
-    await storage.from("datasets").remove([datasetId]);
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: metadataStorageError.message,
-    });
-  }
-
   const { error: databaseError } = await client.from("datasets").insert({
     id: datasetId,
     name: dataset.filename?.split(".")[0] ?? "Dataset",
     owner: user.id,
     public: metadata.public,
+    metadata: {
+      "@context": "http://www.w3.org/ns/csvw",
+      url: `${datasetId}.csv`,
+      "dc:title": metadata.name,
+      "dc:description": metadata.description,
+      tableSchema: {
+        columns: metadata.columns.map((column: any) => ({
+          titles: column.title,
+          "dc:title": column.name,
+          "dc:description": column.description,
+          datatype: column.dataType,
+        })),
+      },
+    },
   });
 
   if (databaseError) {
-    await storage.from("datasets").remove([datasetId]);
+    await client.storage.from("datasets").remove([datasetId]);
 
     throw createError({
       statusCode: 500,

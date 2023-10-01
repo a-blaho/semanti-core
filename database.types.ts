@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           created_at: string;
           id: string;
+          metadata: Json;
           name: string | null;
           owner: string | null;
           public: boolean | null;
@@ -20,6 +21,7 @@ export interface Database {
         Insert: {
           created_at?: string;
           id: string;
+          metadata: Json;
           name?: string | null;
           owner?: string | null;
           public?: boolean | null;
@@ -27,6 +29,7 @@ export interface Database {
         Update: {
           created_at?: string;
           id?: string;
+          metadata?: Json;
           name?: string | null;
           owner?: string | null;
           public?: boolean | null;
