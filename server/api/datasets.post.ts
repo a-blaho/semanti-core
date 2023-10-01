@@ -76,5 +76,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     statusMessage: "Dataset created",
+    id: datasetId,
   };
 });

@@ -136,14 +136,6 @@ const categories = ref<Array<string>>([]);
 const commonStyle =
   "bg-midnight-blue-200 text-midnight-blue-950 border rounded-md border-midnight-blue-100 w-3/4 h-3/4 ";
 
-onBeforeRouteLeave(() => {
-  if (stage.value === 1) return true;
-
-  return confirm(
-    "Are you sure you want to leave this page? All progress will be lost."
-  );
-});
-
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
 const handleInput = () => processFiles(fileInput.value?.files);
@@ -237,9 +229,16 @@ const uploadDataset = async () => {
   formData.append("dataset", datasetFile);
   formData.append("metadata", JSON.stringify(metadata));
 
-  await $fetch("/api/datasets", {
+  const { error, data } = await useFetch("/api/datasets", {
     method: "POST",
     body: formData,
-  });
+  })
+
+  if (error.value != null || data.value == null) {
+    console.error(error.value)
+    return
+  }
+
+  navigateTo(`/datasets/${data.value.id}`);
 };
 </script>
