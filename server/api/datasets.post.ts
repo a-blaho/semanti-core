@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
 
   const { error: databaseError } = await client.from("datasets").insert({
     id: datasetId,
-    name: dataset.filename?.split(".")[0] ?? "Dataset",
+    name: metadata.name,
     owner: user.id,
     public: metadata.public,
     metadata: {
