@@ -1,7 +1,17 @@
 <template>
-  <div class="flex">
-    <Navbar />
-    <div class="flex flex-col w-screen h-screen items-center justify-center bg-midnight-blue-100">
+  <div
+    style="
+      display: grid;
+      grid-template-areas: 'navbar main';
+      grid-template-columns: 12rem 1fr;
+    "
+    class="h-screen"
+  >
+    <Navbar style="grid-area: navbar" />
+    <div
+      class="flex flex-col items-center justify-center bg-midnight-blue-100"
+      style="grid-area: main"
+    >
       <slot />
     </div>
   </div>

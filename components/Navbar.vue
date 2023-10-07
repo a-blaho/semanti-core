@@ -1,7 +1,10 @@
 <template>
-  <div class="flex flex-col h-screen w-48 bg-midnight-blue-900 items-center justify-between py-8 text-midnight-blue-50">
+  <div
+    class="flex flex-col bg-midnight-blue-900 items-center justify-between py-8 text-midnight-blue-50"
+  >
     <div @mouseover="hover = true" @mouseout="hover = false">
-      <NuxtLink to="/dashboard" class="text-xl">semanti
+      <NuxtLink to="/dashboard" class="text-xl"
+        >semanti
         <span :class="{ 'text-midnight-blue-500': hover }">/</span>
         core
       </NuxtLink>
@@ -27,11 +30,10 @@
 <script setup lang="ts">
 const hover = ref(false);
 
-const client = useSupabaseClient()
+const client = useSupabaseClient();
 
 const signOut = async () => {
   await client.auth.signOut();
-  navigateTo('/')
-
-}
+  navigateTo("/");
+};
 </script>
