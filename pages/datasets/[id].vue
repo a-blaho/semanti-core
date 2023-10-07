@@ -9,7 +9,9 @@
       </div>
       <div>
         <DatasetStar :dataset-id="dataset.id" />
-        <Button>Download CSV</Button>
+        <Button @click="navigateTo(downloadUrl, { external: true })"
+          >Download CSV</Button
+        >
       </div>
     </div>
 
@@ -42,6 +44,7 @@ definePageMeta({
 const client = useSupabaseClient<Database>();
 const route = useRoute();
 
+const downloadUrl = ref<string | null>(null);
 const dataset = ref<null | {
   id: string;
   metadata: Metadata;
@@ -64,5 +67,11 @@ onMounted(async () => {
       },
     };
   }
+
+  const { data: url } = await client.storage
+    .from("datasets")
+    .createSignedUrl(`${route.params.id}/${route.params.id}.csv`, 60);
+
+  downloadUrl.value = url?.signedUrl ?? null;
 });
 </script>
