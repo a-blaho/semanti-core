@@ -156,7 +156,8 @@ const processFiles = async (files: FileList | undefined | null) => {
     errorMessage.value = "Please upload a CSV file";
     return;
   }
-  if (datasetFile.size > 6000) {
+
+  if (datasetFile.size > 6000000) {
     errorMessage.value = "Files up to 6MB are supported";
     return;
   }
