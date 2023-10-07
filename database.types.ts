@@ -14,25 +14,25 @@ export interface Database {
           created_at: string;
           id: string;
           metadata: Json;
-          name: string | null;
-          owner: string | null;
-          public: boolean | null;
+          name: string;
+          owner: string;
+          public: boolean;
         };
         Insert: {
           created_at?: string;
           id: string;
           metadata: Json;
-          name?: string | null;
-          owner?: string | null;
-          public?: boolean | null;
+          name: string;
+          owner: string;
+          public?: boolean;
         };
         Update: {
           created_at?: string;
           id?: string;
           metadata?: Json;
-          name?: string | null;
-          owner?: string | null;
-          public?: boolean | null;
+          name?: string;
+          owner?: string;
+          public?: boolean;
         };
         Relationships: [
           {

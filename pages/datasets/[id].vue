@@ -1,27 +1,28 @@
 <template>
-  <div v-if="data" class="w-full h-full py-16 px-24 flex flex-col gap-16">
+  <div v-if="dataset" class="w-full h-full py-16 px-24 flex flex-col gap-16">
     <div class="flex justify-between w-full">
       <div>
-        <h1 class="text-3xl font-bold">{{ data[0].metadata['dc:title'] }}</h1>
-        <p>{{
-          //@ts-ignore
-          data[0].owner.name
-        }}</p>
+        <h1 class="text-3xl font-bold">{{ dataset.metadata["dc:title"] }}</h1>
+        <p>
+          {{ dataset.owner.name }}
+        </p>
       </div>
       <div>
-        <DatasetStar :dataset-id="data[0].id" />
+        <DatasetStar :dataset-id="dataset.id" />
         <Button>Download CSV</Button>
       </div>
     </div>
 
     <div>
       <h2 class="text-2xl font-bold">Description</h2>
-      <p class="text-lg">{{ data[0].metadata['dc:description'] }}</p>
+      <p class="text-lg">{{ dataset.metadata["dc:description"] }}</p>
     </div>
 
     <div>
       <h2 class="text-2xl font-bold">Charts</h2>
-      <div class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-blue-300 hover:bg-midnight-blue-400"></div>
+      <div
+        class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-blue-300 hover:bg-midnight-blue-400"
+      ></div>
     </div>
 
     <div>
@@ -32,15 +33,36 @@
 </template>
 
 <script setup lang="ts">
+import { Database } from "~/database.types";
+
 definePageMeta({
   layout: "dashboard",
 });
 
-const route = useRoute()
+const client = useSupabaseClient<Database>();
+const route = useRoute();
 
-const { data } = useFetch(
-  '/api/datasets',
-  { method: "GET", query: { id: route.params.id } },
-)
+const dataset = ref<null | {
+  id: string;
+  metadata: Metadata;
+  owner: { name: string };
+}>(null);
 
+onMounted(async () => {
+  const { data } = await client
+    .from("datasets")
+    .select("id, owner (name), metadata")
+    .eq("id", route.params.id);
+
+  if (data?.length) {
+    dataset.value = {
+      id: data[0].id,
+      metadata: toMetadata(data[0].metadata),
+      owner: {
+        //@ts-ignore
+        name: data[0].owner.name,
+      },
+    };
+  }
+});
 </script>
