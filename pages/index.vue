@@ -5,8 +5,7 @@
     </h1>
 
     <div
-      class="border border-midnight-blue-800 border-2 bg-midnight-blue-50 rounded-md border-slate-950 px-8 py-4 flex flex-col items-center gap-4"
-    >
+      class="border border-midnight-blue-800 border-2 bg-midnight-blue-50 rounded-md border-slate-950 px-8 py-4 flex flex-col items-center gap-4">
       <Button variant="outlined" @click="signInWithGithub">
         <Icon name="uil:github" class="h-5 w-5" />Sign in via GitHub
       </Button>
@@ -22,34 +21,15 @@
       </h1>
 
       <form @submit.prevent="signIn" class="flex flex-col gap-2 items-center">
-        <TextInput
-          class="w-72"
-          autocomplete="email"
-          name="email"
-          placeholder="Enter your email address"
-          type="email"
-          required="true"
-          v-model="email"
-          :disabled="emailSent"
-        />
+        <TextInput class="w-72" autocomplete="email" name="email" placeholder="Enter your email address" type="email"
+          required="true" v-model="email" :disabled="emailSent" />
 
-        <TextInput
-          v-if="emailSent"
-          class="w-72"
-          autocomplete="one-time-code"
-          name="password"
-          placeholder="Enter the token you received via email"
-          type="text"
-          inputmode="numeric"
-          required="true"
-          v-model="token"
-        />
+        <TextInput v-if="emailSent" class="w-72" autocomplete="one-time-code" name="token"
+          placeholder="Enter the token you received via email" type="text" inputmode="numeric" required="true"
+          v-model="token" />
 
-        <p
-          v-if="emailSent"
-          class="text-sm hover:cursor-pointer hover:underline text-midnight-blue-900"
-          @click="resetForm"
-        >
+        <p v-if="emailSent" class="text-sm hover:cursor-pointer hover:underline text-midnight-blue-900"
+          @click="resetForm">
           Use a different email
         </p>
 
