@@ -20,10 +20,18 @@
       <p>Browse</p>
     </div>
 
-    <p>Settings</p>
+    <p class="cursor-pointer hover:underline" @click="signOut">Sign out</p>
   </div>
 </template>
 
 <script setup lang="ts">
 const hover = ref(false);
+
+const client = useSupabaseClient()
+
+const signOut = async () => {
+  await client.auth.signOut();
+  navigateTo('/')
+
+}
 </script>
