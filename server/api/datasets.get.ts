@@ -8,11 +8,34 @@ export default defineEventHandler(async (event) => {
     getUser(event),
   ]);
 
-  const query = getQuery(event);
-  const { data: datasets, error } = await client
+  const queryObject = getQuery(event);
+
+  const query = client
     .from("datasets")
-    .select("id, name, metadata, owner ( name )")
-    .eq("id", query.id!);
+    .select("id, name, metadata, public, owner ( name )");
+
+  if (queryObject.id) {
+    query.eq("id", queryObject.id);
+  }
+
+  if (queryObject.owner) {
+    query.eq("owner", queryObject.owner);
+  }
+
+  if (queryObject.orderBy && isDatasetColumn(queryObject.orderBy)) {
+    query.order(
+      queryObject.orderBy,
+      queryObject.ascending
+        ? { ascending: queryObject.ascending === "true" }
+        : undefined
+    );
+  }
+
+  if (queryObject.limit && typeof queryObject.limit === "number") {
+    query.limit(queryObject.limit);
+  }
+
+  const { data: datasets, error } = await query;
 
   if (error) {
     throw createError({
@@ -28,3 +51,19 @@ export default defineEventHandler(async (event) => {
     metadata: toMetadata(dataset.metadata),
   }));
 });
+
+type DatasetColumn = keyof Database["public"]["Tables"]["datasets"]["Row"];
+
+function isDatasetColumn(value: unknown): value is DatasetColumn {
+  // TODO: somehow get columns directly from Database
+  const columns = [
+    "id",
+    "name",
+    "owner",
+    "metadata",
+    "created_at",
+    "updated_at",
+  ];
+
+  return typeof value === "string" && columns.includes(value);
+}
