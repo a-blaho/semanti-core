@@ -43,6 +43,34 @@ export interface Database {
           }
         ];
       };
+      stars: {
+        Row: {
+          dataset_id: string;
+          user_id: string;
+        };
+        Insert: {
+          dataset_id: string;
+          user_id: string;
+        };
+        Update: {
+          dataset_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stars_dataset_id_fkey";
+            columns: ["dataset_id"];
+            referencedRelation: "datasets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stars_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       users: {
         Row: {
           created_at: string;

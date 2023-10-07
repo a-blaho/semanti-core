@@ -9,10 +9,7 @@
         }}</p>
       </div>
       <div>
-        <div class="flex text-xl items-center gap-1">
-          <Icon name="ic:round-star-rate" class="text-midnight-blue-900 w-10 h-10" />
-          <p>{{ Math.floor(Math.random() * 100) }}</p>
-        </div>
+        <DatasetStar :dataset-id="data[0].id" />
         <Button>Download CSV</Button>
       </div>
     </div>
