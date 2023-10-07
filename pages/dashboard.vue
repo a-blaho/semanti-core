@@ -1,17 +1,21 @@
 <template>
-  <div class="w-full h-full py-16 px-24 flex flex-col">
+  <div class="w-full h-full py-16 px-24">
     <h1 class="text-3xl">Dashboard</h1>
     <br />
     <h2 class="text-2xl">Recent datasets</h2>
-    <div v-if="loading" class="flex gap-4 overflow-x-auto py-4">
+    <div
+      class="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2 lg:grid-cols-2 md:grid-cols-1"
+    >
       <div
-        class="animate-pulse h-48 w-72 bg-midnight-blue-200 rounded-md"
+        v-if="loading"
         v-for="_ of 4"
-      ></div>
-    </div>
-    <p v-else-if="!recentDatasets">No recent datasets</p>
-    <div v-else-if="recentDatasets" class="flex gap-4 overflow-x-auto py-4">
+        class="animate-pulse h-48 w-72 bg-midnight-blue-200 rounded-md"
+      />
+      <p v-else-if="!recentDatasets || !recentDatasets.length">
+        No recent datasets
+      </p>
       <div
+        v-else-if="recentDatasets"
         v-for="dataset in recentDatasets"
         @click="navigateTo('/datasets/' + dataset.id)"
         class="p-4 bg-midnight-blue-200 border rounded-md h-48 w-72 cursor-pointer hover:bg-midnight-blue-300"
@@ -31,15 +35,22 @@
         </div>
       </div>
     </div>
+
     <br />
+
     <h2 class="text-2xl">Recent visualizations</h2>
-    <div v-if="loading" class="flex gap-4 overflow-x-auto py-4">
+    <div
+      class="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2 lg:grid-cols-2 md:grid-cols-1"
+    >
       <div
-        class="animate-pulse h-48 w-72 bg-midnight-blue-200 rounded-md"
+        v-if="loading"
         v-for="_ of 4"
-      ></div>
+        class="animate-pulse h-48 w-72 bg-midnight-blue-200 rounded-md"
+      />
+      <p v-else-if="!recentVisualizations || !recentVisualizations.length">
+        No recent datasets
+      </p>
     </div>
-    <p v-else-if="!recentVisualizations">No recent visualizations</p>
   </div>
 </template>
 
