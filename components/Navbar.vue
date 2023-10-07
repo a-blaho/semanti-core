@@ -17,8 +17,18 @@
         </div>
       </NuxtLink>
       <br />
-      <NuxtLink to="/dashboard">Home</NuxtLink>
-      <NuxtLink to="/datasets">My datasets</NuxtLink>
+      <NuxtLink
+        to="/dashboard"
+        :class="route.path === '/dashboard' ? 'font-bold' : undefined"
+        class="hover:underline"
+        >Dashboard</NuxtLink
+      >
+      <NuxtLink
+        to="/datasets"
+        :class="route.path === '/datasets' ? 'font-bold' : undefined"
+        class="hover:underline"
+        >My datasets</NuxtLink
+      >
       <p>Shared with me</p>
       <p>Browse</p>
     </div>
@@ -31,6 +41,7 @@
 const hover = ref(false);
 
 const client = useSupabaseClient();
+const route = useRoute();
 
 const signOut = async () => {
   await client.auth.signOut();
