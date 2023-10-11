@@ -1,11 +1,11 @@
 <template>
   <div
-    class="flex flex-col bg-midnight-blue-900 items-center justify-between py-8 text-midnight-blue-50"
+    class="flex flex-col bg-midnight-900 items-center justify-between py-8 text-midnight-50"
   >
     <div @mouseover="hover = true" @mouseout="hover = false">
       <NuxtLink to="/dashboard" class="text-xl"
         >semanti
-        <span :class="{ 'text-midnight-blue-500': hover }">/</span>
+        <span :class="{ 'text-midnight-500': hover }">/</span>
         core
       </NuxtLink>
     </div>

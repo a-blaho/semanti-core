@@ -26,7 +26,7 @@
 defineProps({
   class: {
     type: String,
-    default: "h-5 w-5 text-midnight-blue-50",
+    default: "h-5 w-5 text-midnight-50",
   },
 });
 </script>

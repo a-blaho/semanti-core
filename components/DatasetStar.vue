@@ -4,7 +4,7 @@
     <Icon
       @click.stop="toggleStar"
       :name="starred ? 'ic:round-star' : 'ic:round-star-border'"
-      class="cursor-pointer text-midnight-blue-900 w-8 h-8"
+      class="cursor-pointer text-midnight-900 w-8 h-8"
     />
   </div>
 </template>

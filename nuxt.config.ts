@@ -12,7 +12,7 @@ export default defineNuxtConfig({
       theme: {
         extend: {
           colors: {
-            "midnight-blue": {
+            midnight: {
               "50": "#f4f6fe",
               "100": "#eaedfd",
               "200": "#d9dffb",

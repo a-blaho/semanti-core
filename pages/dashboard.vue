@@ -9,7 +9,7 @@
       <div
         v-if="loading"
         v-for="_ of 4"
-        class="animate-pulse h-48 w-72 bg-midnight-blue-200 rounded-md"
+        class="animate-pulse h-48 w-72 bg-midnight-200 rounded-md"
       />
       <p v-else-if="!recentDatasets || !recentDatasets.length">
         No recent datasets
@@ -18,7 +18,7 @@
         v-else-if="recentDatasets"
         v-for="dataset in recentDatasets"
         @click="navigateTo('/datasets/' + dataset.id)"
-        class="p-4 bg-midnight-blue-200 border rounded-md h-48 w-72 cursor-pointer hover:bg-midnight-blue-300"
+        class="p-4 bg-midnight-200 border rounded-md h-48 w-72 cursor-pointer hover:bg-midnight-300"
       >
         <p class="font-bold">{{ dataset.metadata["dc:title"] }}</p>
         <p>
@@ -45,7 +45,7 @@
       <div
         v-if="loading"
         v-for="_ of 4"
-        class="animate-pulse h-48 w-72 bg-midnight-blue-200 rounded-md"
+        class="animate-pulse h-48 w-72 bg-midnight-200 rounded-md"
       />
       <p v-else-if="!recentVisualizations || !recentVisualizations.length">
         No recent datasets

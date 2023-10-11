@@ -23,7 +23,7 @@
     <div>
       <h2 class="text-2xl font-bold">Charts</h2>
       <div
-        class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-blue-300 hover:bg-midnight-blue-400"
+        class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-300 hover:bg-midnight-400"
       ></div>
     </div>
 
