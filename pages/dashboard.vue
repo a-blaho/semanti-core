@@ -42,6 +42,7 @@
 </template>
 
 <script setup lang="ts">
+import { Dataset } from "~/components/DatasetCard.vue";
 import { Database } from "~/database.types";
 
 definePageMeta({
@@ -52,14 +53,7 @@ const user = useSupabaseUser();
 const client = useSupabaseClient<Database>();
 
 const loading = ref<boolean>(true);
-const recentDatasets = ref<
-  Array<{
-    id: string;
-    metadata: Metadata;
-    public: boolean;
-    owner: { name: string };
-  }>
->(new Array(4));
+const recentDatasets = ref<Array<Dataset>>(new Array(4));
 const recentVisualizations = ref<null | Array<any>>(null);
 
 onMounted(async () => {
@@ -67,12 +61,12 @@ onMounted(async () => {
 
   const { data } = await client
     .from("datasets")
-    .select("id, metadata, public, owner (name)")
+    .select("id, name, metadata, public, owner (name)")
     .eq("owner", user.value.id)
     .order("created_at", { ascending: false })
     .limit(4);
 
-  if (data) {
+  if (data != null) {
     recentDatasets.value = data.map((dataset) => ({
       ...dataset,
       metadata: toMetadata(dataset.metadata),

@@ -15,7 +15,9 @@
       }
     "
   >
-    <option disabled selected value>{{ placeholder }}</option>
+    <option v-if="placeholder" disabled selected value>
+      {{ placeholder }}
+    </option>
     <slot />
   </select>
 </template>
@@ -23,7 +25,6 @@
 <script setup>
 defineProps({
   placeholder: {
-    required: true,
     type: String,
   },
   name: {
