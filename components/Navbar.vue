@@ -24,8 +24,8 @@
         >Dashboard</NuxtLink
       >
       <NuxtLink
-        to="/datasets"
-        :class="route.path === '/datasets' ? 'font-bold' : undefined"
+        to="/my-datasets"
+        :class="route.path === '/my-datasets' ? 'font-bold' : undefined"
         class="hover:underline"
         >My datasets</NuxtLink
       >

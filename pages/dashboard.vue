@@ -7,33 +7,17 @@
       class="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2 lg:grid-cols-2 md:grid-cols-1"
     >
       <div
-        v-if="loading"
-        v-for="_ of 4"
-        class="animate-pulse h-48 w-72 bg-midnight-200 rounded-md"
-      />
-      <p v-else-if="!recentDatasets || !recentDatasets.length">
-        No recent datasets
-      </p>
-      <div
-        v-else-if="recentDatasets"
-        v-for="dataset in recentDatasets"
-        @click="navigateTo('/datasets/' + dataset.id)"
-        class="p-4 bg-midnight-200 border rounded-md h-48 w-72 cursor-pointer hover:bg-midnight-300"
+        v-if="!recentDatasets.filter(isNotNil).length && !loading"
+        class="h-48 flex items-center justify-center col-span-4"
       >
-        <p class="font-bold">{{ dataset.metadata["dc:title"] }}</p>
-        <p>
-          {{ dataset.owner.name }}
-        </p>
-        <br />
-        <div>
-          <p class="truncate">{{ dataset.metadata["dc:description"] }}</p>
-        </div>
-        <br />
-        <div class="w-full flex justify-between items-center">
-          <DatasetStar :dataset-id="dataset.id" />
-          <p>{{ dataset.public ? "public" : "private" }}</p>
-        </div>
+        <p>No recent datasets</p>
       </div>
+      <DatasetCard
+        :loading="loading"
+        v-else
+        v-for="dataset in recentDatasets"
+        :dataset="dataset"
+      />
     </div>
 
     <br />
@@ -47,9 +31,12 @@
         v-for="_ of 4"
         class="animate-pulse h-48 w-72 bg-midnight-200 rounded-md"
       />
-      <p v-else-if="!recentVisualizations || !recentVisualizations.length">
-        No recent datasets
-      </p>
+      <div
+        v-else-if="!recentVisualizations || !recentVisualizations.length"
+        class="h-48 flex items-center justify-center col-span-4"
+      >
+        <p>No recent visualizations</p>
+      </div>
     </div>
   </div>
 </template>
@@ -65,12 +52,14 @@ const user = useSupabaseUser();
 const client = useSupabaseClient<Database>();
 
 const loading = ref<boolean>(true);
-const recentDatasets = ref<null | Array<{
-  id: string;
-  metadata: Metadata;
-  public: boolean;
-  owner: { name: string };
-}>>(null);
+const recentDatasets = ref<
+  Array<{
+    id: string;
+    metadata: Metadata;
+    public: boolean;
+    owner: { name: string };
+  }>
+>(new Array(4));
 const recentVisualizations = ref<null | Array<any>>(null);
 
 onMounted(async () => {
