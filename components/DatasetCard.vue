@@ -1,7 +1,7 @@
 <template>
   <div
     @click="navigateTo('/datasets/' + dataset?.id)"
-    class="p-4 bg-midnight-200 border rounded-md h-48 w-72 cursor-pointer hover:bg-midnight-300"
+    class="p-4 bg-midnight-200 border rounded-md h-48 w-72 cursor-pointer hover:bg-midnight-300 justify-self-center align-self-center"
     :class="{ 'animate-pulse': loading }"
   >
     <template v-if="!loading && dataset">
