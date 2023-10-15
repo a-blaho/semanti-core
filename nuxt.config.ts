@@ -9,6 +9,8 @@ export default defineNuxtConfig({
   ],
   tailwindcss: {
     config: {
+      content: [],
+      plugins: [require("@headlessui/tailwindcss")({ prefix: "ui" })],
       theme: {
         extend: {
           colors: {

@@ -175,8 +175,6 @@
 </template>
 
 <script setup lang="ts">
-import { parse } from "csv-parse/browser/esm/sync";
-
 definePageMeta({
   layout: "dashboard",
 });
@@ -229,29 +227,13 @@ const processFiles = async (files: FileList | undefined | null) => {
 
   nextStage();
 
-  const stream = datasetFile.stream();
-  const reader = stream.getReader();
-  let firstLine = "";
+  columns.value = (
+    await parseCsv({
+      file: datasetFile,
+      options: { start: 0, end: 1 },
+    })
+  )[0];
 
-  while (true) {
-    const { done, value } = await reader.read();
-
-    if (done) {
-      break;
-    }
-
-    const chunk = new TextDecoder("utf-8").decode(value);
-    const index = chunk.indexOf("\n");
-
-    if (index !== -1) {
-      firstLine += chunk.substring(0, index);
-      await reader.cancel();
-      break;
-    }
-    firstLine += chunk;
-  }
-
-  columns.value = parse(firstLine)[0];
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
   nextStage();
