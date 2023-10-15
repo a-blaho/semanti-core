@@ -1,6 +1,20 @@
 <template>
-  <div v-if="dataset" class="w-full h-full py-16 px-24 flex flex-col">
-    <div class="flex justify-between items-end w-full pb-2">
+  <div
+    v-if="dataset"
+    style="
+      display: grid;
+      grid-template-areas:
+        'info'
+        'main';
+      grid-template-rows: 4rem 1fr;
+      height: 100vh;
+    "
+    class="w-full py-8 px-16"
+  >
+    <div
+      class="flex justify-between items-end w-full pb-2"
+      style="grid-area: info"
+    >
       <div>
         <p>
           {{ dataset.owner.name }}
@@ -14,56 +28,58 @@
         >
       </div>
     </div>
-    <HeadlessTabGroup>
-      <HeadlessTabList class="flex border-b border-midnight-500 text-lg">
-        <HeadlessTab :class="tabStyle">General</HeadlessTab>
-        <HeadlessTab :class="tabStyle">Preview</HeadlessTab>
-      </HeadlessTabList>
-      <HeadlessTabPanels class="pt-4">
-        <HeadlessTabPanel class="flex flex-col gap-16">
-          <div>
-            <h2 class="text-xl font-bold">Description</h2>
-            <p class="text-lg">{{ dataset.metadata["dc:description"] }}</p>
-          </div>
+    <div style="grid-area: main">
+      <HeadlessTabGroup>
+        <HeadlessTabList class="flex border-b border-midnight-500 text-lg">
+          <HeadlessTab :class="tabStyle">General</HeadlessTab>
+          <HeadlessTab :class="tabStyle">Preview</HeadlessTab>
+        </HeadlessTabList>
+        <HeadlessTabPanels class="pt-4">
+          <HeadlessTabPanel class="flex flex-col gap-16">
+            <div>
+              <h2 class="text-xl font-bold">Description</h2>
+              <p class="text-lg">{{ dataset.metadata["dc:description"] }}</p>
+            </div>
 
-          <div>
-            <h2 class="text-xl font-bold">Charts</h2>
-            <div
-              class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-300 hover:bg-midnight-400"
-            />
-          </div>
+            <div>
+              <h2 class="text-xl font-bold">Charts</h2>
+              <div
+                class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-300 hover:bg-midnight-400"
+              />
+            </div>
 
-          <div>
-            <h2 class="text-xl font-bold">Comments</h2>
-            <p>No comments yet</p>
-          </div>
-        </HeadlessTabPanel>
-        <HeadlessTabPanel>
-          <table class="w-full">
-            <thead>
-              <tr>
-                <th
-                  class="border border-gray-900 px-4 py-2"
-                  v-for="column in dataset.metadata.tableSchema.columns"
-                >
-                  {{ column["titles"] }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in rows">
-                <td
-                  class="border border-gray-900 px-4 py-2"
-                  v-for="item in row"
-                >
-                  {{ item }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </HeadlessTabPanel>
-      </HeadlessTabPanels>
-    </HeadlessTabGroup>
+            <div>
+              <h2 class="text-xl font-bold">Comments</h2>
+              <p>No comments yet</p>
+            </div>
+          </HeadlessTabPanel>
+          <HeadlessTabPanel class="overflow-auto">
+            <table class="font-mono w-full">
+              <thead>
+                <tr>
+                  <th
+                    class="border border-gray-400 px-4 py-2"
+                    v-for="column in dataset.metadata.tableSchema.columns"
+                  >
+                    {{ column["titles"] }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="row in rows">
+                  <td
+                    class="border border-gray-400 px-4 py-2"
+                    v-for="item in row"
+                  >
+                    {{ item }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </HeadlessTabPanel>
+        </HeadlessTabPanels>
+      </HeadlessTabGroup>
+    </div>
   </div>
 </template>
 
