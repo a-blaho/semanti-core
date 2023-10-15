@@ -4,13 +4,16 @@
       <h1 class="text-3xl">Browse datasets</h1>
       <br />
       <div class="w-full flex items-center justify-between">
-        <TextInput
-          autocomplete="off"
-          name="search"
-          v-model="search"
-          placeholder="Search datasets"
-          class="w-1/2"
-        />
+        <div class="flex gap-1 items-center">
+          <TextInput
+            autocomplete="off"
+            name="search"
+            v-model="searchBuffer"
+            placeholder="Search datasets"
+            class="w-96"
+          />
+          <Button @click="search = searchBuffer" class="h-9">Search</Button>
+        </div>
         <div class="flex items-center gap-1">
           <label class="w-24">Sort by:</label>
           <SelectInput class="w-48" v-model="orderBy" name="search">
@@ -71,6 +74,7 @@ const pageSize = 12;
 
 const loading = ref<boolean>(false);
 const page = ref<number>(0);
+const searchBuffer = ref<string>("");
 const search = ref<string>("");
 const orderBy = ref<string>("nameAsc");
 const total = ref<number>(1);
