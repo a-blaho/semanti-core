@@ -12,7 +12,7 @@
           class="w-1/2"
         />
         <div class="flex items-center gap-1">
-          <label>Sort by:</label>
+          <label class="w-24">Sort by:</label>
           <SelectInput class="w-48" v-model="orderBy" name="search">
             <option value="nameAsc">Name ascending</option>
             <option value="nameDesc">Name descending</option>
