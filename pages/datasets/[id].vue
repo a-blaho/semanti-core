@@ -28,9 +28,11 @@
         >
       </div>
     </div>
-    <div style="grid-area: main">
+    <div style="grid-area: main" class="overflow-auto">
       <HeadlessTabGroup>
-        <HeadlessTabList class="flex border-b border-midnight-500 text-lg">
+        <HeadlessTabList
+          class="flex border-b border-midnight-500 text-lg top-0 sticky bg-midnight-100"
+        >
           <HeadlessTab :class="tabStyle">General</HeadlessTab>
           <HeadlessTab :class="tabStyle">Preview</HeadlessTab>
         </HeadlessTabList>
