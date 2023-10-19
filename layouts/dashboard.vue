@@ -9,7 +9,7 @@
   >
     <Navbar style="grid-area: navbar" />
     <div
-      class="flex flex-col items-center justify-center bg-midnight-100"
+      class="flex flex-col items-center justify-center bg-space-50 overflow-auto"
       style="grid-area: main"
     >
       <slot />

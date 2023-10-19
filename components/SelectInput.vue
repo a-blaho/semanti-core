@@ -1,6 +1,6 @@
 <template>
   <select
-    class="w-full border rounded-md h-8 p-1 focus:outline-none focus:border-midnight-900"
+    class="w-full border rounded-md h-8 p-1 focus:outline-none focus:border-space-900"
     :class="{ 'text-gray-400': modelValue == null }"
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"

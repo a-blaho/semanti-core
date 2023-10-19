@@ -29,7 +29,7 @@
       <div
         v-if="loading"
         v-for="_ of 4"
-        class="animate-pulse h-48 w-72 bg-midnight-200 rounded-md"
+        class="animate-pulse h-48 w-72 bg-space-200 rounded-md"
       />
       <div
         v-else-if="!recentVisualizations || !recentVisualizations.length"

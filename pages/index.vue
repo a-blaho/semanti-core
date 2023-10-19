@@ -1,24 +1,24 @@
 <template>
   <div class="flex flex-col w-screen h-screen items-center justify-center">
     <h1 class="text-6xl select-none p-4">
-      semanti<span class="text-midnight-900">/</span>core
+      semanti<span class="text-space-900">/</span>core
     </h1>
 
     <div
-      class="border border-midnight-800 border-2 bg-midnight-50 rounded-md border-slate-950 px-8 py-4 flex flex-col items-center gap-4"
+      class="border border-space-800 border-2 bg-space-50 rounded-md border-slate-950 px-8 py-4 flex flex-col items-center gap-4"
     >
       <Button variant="outlined" @click="signInWithGithub">
         <Icon name="uil:github" class="h-5 w-5" />Sign in via GitHub
       </Button>
 
       <div class="flex items-center gap-2">
-        <hr class="h-0.5 w-32 border-0 bg-midnight-900" />
+        <hr class="h-0.5 w-32 border-0 bg-space-900" />
         <p>or</p>
-        <hr class="h-0.5 w-32 border-0 bg-midnight-900" />
+        <hr class="h-0.5 w-32 border-0 bg-space-900" />
       </div>
 
       <h1 class="text-xl font-semibold">
-        Sign in<span class="text-midnight-900">/</span>up using just email
+        Sign in<span class="text-space-900">/</span>up using just email
       </h1>
 
       <form @submit.prevent="signIn" class="flex flex-col gap-2 items-center">
@@ -47,7 +47,7 @@
 
         <p
           v-if="emailSent"
-          class="text-sm hover:cursor-pointer hover:underline text-midnight-900"
+          class="text-sm hover:cursor-pointer hover:underline text-space-900"
           @click="resetForm"
         >
           Use a different email

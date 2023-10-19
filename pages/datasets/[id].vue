@@ -31,7 +31,7 @@
     <div style="grid-area: main" class="overflow-auto">
       <HeadlessTabGroup>
         <HeadlessTabList
-          class="flex border-b border-midnight-500 text-lg top-0 sticky bg-midnight-100"
+          class="flex border-b border-space-500 text-lg top-0 sticky bg-space-100"
         >
           <HeadlessTab :class="tabStyle">General</HeadlessTab>
           <HeadlessTab :class="tabStyle">Preview</HeadlessTab>
@@ -46,7 +46,7 @@
             <div>
               <h2 class="text-xl font-bold">Charts</h2>
               <div
-                class="h-48 w-72 border rounded-md hover:cursor-pointer bg-midnight-300 hover:bg-midnight-400"
+                class="h-48 w-72 border rounded-md hover:cursor-pointer bg-space-300 hover:bg-space-400"
               />
             </div>
 
@@ -104,7 +104,7 @@ const dataset = ref<null | {
 const rows = ref<any>([]);
 
 const tabStyle =
-  "border-b px-8 ui-selected:border-midnight-950 focus:outline-none";
+  "border-b px-8 ui-selected:border-space-950 focus:outline-none";
 
 onMounted(async () => {
   const [{ data }, { data: url }, { data: file }] = await Promise.all([

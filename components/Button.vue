@@ -3,9 +3,9 @@
     :disabled="loading"
     class="border rounded-lg px-8 py-2 disabled:opacity-50 flex items-center justify-center gap-2 transition"
     :class="{
-      'bg-transparent text-midnight-900 border-midnight-900 hover:bg-midnight-900 hover:text-midnight-50 disabled:hover:bg-transparent disabled:hover:text-midnight-900':
+      'bg-transparent text-space-900 border-space-900 hover:bg-space-900 hover:text-space-50 disabled:hover:bg-transparent disabled:hover:text-space-900':
         variant === 'outlined',
-      'text-midnight-50 bg-midnight-900 hover:bg-midnight-950 disabled:hover:bg-midnight-900':
+      'text-space-50 bg-space-900 hover:bg-space-950 disabled:hover:bg-space-900':
         variant === 'contained',
     }"
     @click="$emit('click')"

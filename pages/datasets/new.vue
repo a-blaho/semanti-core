@@ -1,5 +1,5 @@
 <template>
-  <h1 class="text-2xl text-midnight-950">
+  <h1 class="text-2xl text-space-950">
     {{
       stage === 1
         ? "Upload your dataset"
@@ -14,18 +14,18 @@
     <Icon
       name="octicon:dot-fill-24"
       v-for="_ of stage"
-      class="text-midnight-950 h-8 w-8"
+      class="text-space-950 h-8 w-8"
     />
     <Icon
       name="octicon:dot-24"
       v-for="_ of 4 - stage"
-      class="text-midnight-950 h-8 w-8"
+      class="text-space-950 h-8 w-8"
     />
   </div>
 
   <label
     v-if="stage === 1"
-    class="flex flex-col hover:border-midnight-900 cursor-pointer justify-center items-center"
+    class="flex flex-col hover:border-space-900 cursor-pointer justify-center items-center"
     :class="commonStyle"
     @drop.prevent="handleDrop"
     @dragover.prevent
@@ -48,7 +48,7 @@
     class="flex flex-col items-center justify-center"
     :class="commonStyle"
   >
-    <Loading class="text-midnight-950 w-64 h-64" />
+    <Loading class="text-space-950 w-64 h-64" />
   </div>
 
   <form
@@ -79,7 +79,7 @@
       cols="75"
       rows="12"
       required
-      class="border rounded-md p-1 w-full h-full focus:outline-none focus:border-midnight-900"
+      class="border rounded-md p-1 w-full h-full focus:outline-none focus:border-space-900"
     >
     </textarea>
     <div class="flex items-center w-full justify-between">
@@ -197,7 +197,7 @@ const dataTypes = ref<Array<string>>([]);
 const categories = ref<Array<string>>([]);
 
 const commonStyle =
-  "bg-midnight-200 text-midnight-950 border rounded-md border-midnight-100 w-3/4 h-3/4 ";
+  "bg-space-300 text-space-950 border rounded-md border-space-100 w-3/4 h-3/4 ";
 
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
