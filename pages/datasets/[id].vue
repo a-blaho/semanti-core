@@ -31,7 +31,7 @@
     <div style="grid-area: main" class="overflow-auto">
       <HeadlessTabGroup>
         <HeadlessTabList
-          class="flex border-b border-space-500 text-lg top-0 sticky bg-space-100"
+          class="flex border-b border-space-500 text-lg top-0 sticky bg-space-50"
         >
           <HeadlessTab :class="tabStyle">General</HeadlessTab>
           <HeadlessTab :class="tabStyle">Preview</HeadlessTab>
@@ -86,7 +86,7 @@
 </template>
 
 <script setup lang="ts">
-import { Database } from "~/database.types";
+import type { Database } from "~/database.types";
 
 definePageMeta({
   layout: "dashboard",

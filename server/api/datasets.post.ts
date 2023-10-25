@@ -1,6 +1,6 @@
 import { serverSupabaseClient } from "#supabase/server";
 import { randomUUID } from "crypto";
-import { Database } from "~/database.types";
+import type { Database } from "~/database.types";
 
 export default defineEventHandler(async (event) => {
   const [client, user] = await Promise.all([
