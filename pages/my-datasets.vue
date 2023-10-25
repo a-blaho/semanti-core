@@ -41,8 +41,8 @@
 </template>
 
 <script setup lang="ts">
-import { Dataset } from "~/components/DatasetCard.vue";
-import { Database } from "~/database.types";
+import type { Dataset } from "~/components/DatasetCard.vue";
+import type { Database } from "~/database.types";
 
 definePageMeta({
   layout: "dashboard",

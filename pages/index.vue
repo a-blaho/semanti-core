@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: "index",
+  layout: "landing",
 });
 
 const user = useSupabaseUser();

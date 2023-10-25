@@ -10,7 +10,7 @@
 </template>
 
 <script setup lang="ts">
-import { Database } from "~/database.types";
+import type { Database } from "~/database.types";
 
 const props = defineProps({
   datasetId: { required: true, type: String },
