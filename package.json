@@ -14,7 +14,7 @@
     "@nuxtjs/tailwindcss": "^6.8.1",
     "@types/csv-parse": "^1.2.2",
     "@types/node": "^20",
-    "nuxt": "^3.8.0",
+    "nuxt": "^3.8.1",
     "nuxt-headlessui": "^1.1.4",
     "nuxt-icon": "^0.6.1"
   },
