@@ -12,7 +12,6 @@
     "@nuxt/devtools": "latest",
     "@nuxtjs/supabase": "^1.1.4",
     "@nuxtjs/tailwindcss": "^6.10.0",
-    "@types/csv-parse": "^1.2.2",
     "@types/node": "^20",
     "nuxt": "^3.8.2",
     "nuxt-headlessui": "^1.1.4",
