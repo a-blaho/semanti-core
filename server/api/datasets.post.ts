@@ -47,6 +47,7 @@ export default defineEventHandler(async (event) => {
     name: metadata.name,
     owner: user.id,
     public: metadata.public,
+    size: metadata.size,
     metadata: {
       "@context": "http://www.w3.org/ns/csvw",
       url: `${datasetId}.csv`,

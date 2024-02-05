@@ -29,68 +29,65 @@
         class="grid gap-4 2xl:grid-cols-4 xl:grid-cols-2 lg:grid-cols-2 md:grid-cols-1"
       >
         <div
-          v-if="!datasets.filter(isNotNil).length && !loading"
+          v-if="datasets?.data.length === 0"
           class="h-48 flex items-center justify-center col-span-4"
         >
           <p>No datasets found</p>
         </div>
         <DatasetCard
-          :loading="loading"
           v-else
-          v-for="dataset in datasets"
+          v-for="dataset in datasets?.data"
           :dataset="dataset"
         />
       </div>
     </div>
+    <br />
     <div class="flex items-center justify-center gap-8">
       <Button
         variant="outlined"
-        :disabled="page == 0 || loading"
+        :disabled="page == 0 || pending"
         @click="page--"
       >
         Previous page
       </Button>
-      {{ page + 1 }} / {{ Math.ceil(total / pageSize) }}
+      {{ page + 1 }} / {{ Math.ceil((datasets?.total ?? 0) / pageSize) }}
       <Button
         variant="outlined"
-        :disabled="isLastPage || loading"
+        :disabled="isLastPage || pending"
         @click="page++"
       >
         Next page
       </Button>
     </div>
+    <br />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Dataset } from "~/components/DatasetCard.vue";
 import type { Database } from "~/database.types";
 
 definePageMeta({ layout: "dashboard" });
 
 const client = useSupabaseClient<Database>();
 
-const pageSize = 12;
+const pageSize = 8;
 
-const loading = ref<boolean>(false);
 const page = ref<number>(0);
 const searchBuffer = ref<string>("");
 const search = ref<string>("");
 const orderBy = ref<string>("nameAsc");
-const total = ref<number>(1);
-const datasets = ref<Array<Dataset>>(new Array(pageSize));
 const isLastPage = ref<boolean>(false);
 
-watch(
-  [page, search, orderBy],
+const { data: datasets, pending } = await useAsyncData(
+  `browse:${page.value}:${search.value}:${orderBy.value}`,
   async () => {
-    loading.value = true;
-
     const pagination = getPagination(page.value, pageSize);
 
     const partialQuery = client
       .from("datasets")
-      .select("id, name, metadata, public, owner (name)", { count: "exact" })
+      .select("id, name, metadata, public, owner (name), size", {
+        count: "exact",
+      })
       .eq("public", true);
 
     if (search.value !== "") {
@@ -111,27 +108,24 @@ watch(
 
     const { data, count } = await partialQuery;
 
-    if (data != null && count != null) {
-      if (count / pageSize - 1 <= page.value) {
-        isLastPage.value = true;
-      } else {
-        isLastPage.value = false;
-      }
-
-      total.value = count;
-
-      datasets.value = data.map((dataset) => ({
-        ...dataset,
-        metadata: toMetadata(dataset.metadata),
-        owner: {
-          //@ts-ignore
-          name: dataset.owner.name,
-        },
-      }));
+    if (!data || !count) {
+      return {
+        data: [],
+        total: 0,
+      };
     }
 
-    loading.value = false;
+    if (count / pageSize - 1 <= page.value) {
+      isLastPage.value = true;
+    } else {
+      isLastPage.value = false;
+    }
+
+    return {
+      data: data.map(toDataset),
+      total: count,
+    };
   },
-  { immediate: true }
+  { watch: [page, search, orderBy] }
 );
 </script>

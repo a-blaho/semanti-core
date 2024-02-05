@@ -41,19 +41,12 @@
             </div>
             <div class="flex justify-between gap-16">
               <Button class="w-full" @click="downloadDataset()">
-                Download CSV
+                Download CSV ({{ formatBytes(dataset.size) }})
               </Button>
               <Button class="w-full" @click="downloadMetadata()"
                 >Download metadata</Button
               >
             </div>
-            <div>
-              <h2 class="text-xl font-bold">Charts</h2>
-              <div
-                class="h-48 w-72 border rounded-md hover:cursor-pointer bg-space-300 hover:bg-space-400"
-              />
-            </div>
-
             <div>
               <h2 class="text-xl font-bold">Comments</h2>
               <p>No comments yet</p>
@@ -103,6 +96,7 @@ const dataset = ref<null | {
   id: string;
   metadata: Metadata;
   owner: { name: string };
+  size: number;
 }>(null);
 const rows = ref<any>([]);
 
@@ -138,7 +132,7 @@ onMounted(async () => {
   const [{ data }, { data: datasetFile }] = await Promise.all([
     client
       .from("datasets")
-      .select("id, owner (name), metadata")
+      .select("id, owner ( name ), metadata, size")
       .eq("id", route.params.id),
 
     client.storage
@@ -154,6 +148,7 @@ onMounted(async () => {
         //@ts-ignore
         name: data[0].owner.name,
       },
+      size: data[0].size,
     };
   }
   if (datasetFile) {

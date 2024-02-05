@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center gap-1">
-    <p>{{ formatNumber(starCount) }}</p>
+    <p>{{ formatLargeNumber(starCount) }}</p>
     <Icon
       @click.stop="toggleStar"
       :name="starred ? 'ic:round-star' : 'ic:round-star-border'"

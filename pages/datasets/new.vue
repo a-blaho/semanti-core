@@ -197,7 +197,7 @@ const dataTypes = ref<Array<string>>([]);
 const categories = ref<Array<string>>([]);
 
 const commonStyle =
-  "bg-space-300 text-space-950 border rounded-md border-space-100 w-3/4 h-3/4 ";
+  "bg-space-100 border-space-300 text-space-950 border rounded-md border-space-100 w-3/4 h-3/4 ";
 
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
@@ -265,6 +265,7 @@ const uploadDataset = async () => {
     public: publicDataset.value,
     name: datasetName.value,
     description: datasetDescription.value,
+    size: datasetFile.size,
     columns: columns.value.map((_, index) => ({
       title: columns.value[index],
       name: names.value[index],
