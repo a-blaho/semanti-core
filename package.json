@@ -13,7 +13,7 @@
     "@nuxtjs/supabase": "^1.1.6",
     "@nuxtjs/tailwindcss": "^6.11.2",
     "@types/node": "^20",
-    "nuxt": "^3.8.2",
+    "nuxt": "^3.10.1",
     "nuxt-headlessui": "^1.1.5",
     "nuxt-icon": "^0.6.8"
   },
