@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@headlessui/tailwindcss": "^0.2.0",
-    "csv-parse": "^5.5.3",
+    "csv-parse": "^5.5.5",
     "dotenv": "^16.4.5"
   }
 }
