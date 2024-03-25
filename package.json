@@ -16,7 +16,7 @@
     "@types/node": "^20",
     "nuxt": "^3.10.2",
     "nuxt-headlessui": "^1.1.5",
-    "nuxt-icon": "^0.6.8"
+    "nuxt-icon": "^0.6.10"
   },
   "dependencies": {
     "@headlessui/tailwindcss": "^0.2.0",
