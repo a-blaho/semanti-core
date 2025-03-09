@@ -1,12 +1,14 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   devtools: { enabled: true },
+
   modules: [
     "@nuxtjs/supabase",
     "@nuxtjs/tailwindcss",
     "nuxt-icon",
     "nuxt-headlessui",
   ],
+
   tailwindcss: {
     config: {
       content: [],
@@ -58,10 +60,13 @@ export default defineNuxtConfig({
       },
     },
   },
+
   supabase: {
     redirectOptions: {
       login: "/",
       callback: "/",
     },
   },
+
+  compatibilityDate: "2025-02-23",
 });

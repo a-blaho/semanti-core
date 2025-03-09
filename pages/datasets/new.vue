@@ -83,23 +83,59 @@
     >
     </textarea>
     <div class="flex items-center w-full justify-between">
-      <Button @click="resetStages" variant="outlined">Cancel</Button>
-      <Button type="submit">Next</Button>
+      <Button variant="outlined" @click="resetStages">Cancel</Button>
+      <div class="flex">
+        <Button @click="previousStage">Previous</Button>
+        <Button type="submit">Next</Button>
+      </div>
     </div>
   </form>
 
   <form
-    class="flex flex-col items-center justify-between gap-2 px-8 py-4"
-    :class="commonStyle"
     v-if="stage === 4"
+    class="flex flex-col items-center justify-between gap-2 px-8 py-4 overflow-y-auto"
+    :class="commonStyle"
     @submit.prevent="uploadDataset"
   >
-    <div class="grid grid-cols-5 gap-4 overflow-auto w-full">
+    <div class="grid grid-cols-5 gap-4 overflow-visible w-full">
       <template v-for="(column, index) in columns">
-        <div class="flex items-center">
+        <div class="flex items-center gap-2">
           <label class="font-mono truncate" :for="column + '-' + index">
-            {{ column }}
+            {{ names[index] }}
           </label>
+          <div class="relative">
+            <button
+              type="button"
+              class="text-sm text-gray-500 hover:text-gray-700"
+              @click="() => showPreview(index)"
+            >
+              <Icon name="heroicons:eye" class="w-5 h-5" />
+            </button>
+            <div
+              v-if="previewIndex === index"
+              class="fixed z-[100] mt-2 bg-white rounded-md shadow-lg p-4 min-w-[200px]"
+              :style="getPreviewPosition(index)"
+              :ref="(el) => setPreviewRef(el, index)"
+            >
+              <h3 class="font-bold mb-2">Sample Values:</h3>
+              <ul class="text-sm">
+                <li
+                  v-for="value in analysisResults[index].sampleValues"
+                  class="truncate"
+                >
+                  {{ value }}
+                </li>
+              </ul>
+              <div class="mt-2 text-xs text-gray-500">
+                <p>Type: {{ dataTypes[index] }}</p>
+                <p>Format: {{ categories[index] }}</p>
+                <p>
+                  Confidence:
+                  {{ (analysisResults[index].confidence * 100).toFixed(1) }}%
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <TextInput
@@ -133,48 +169,30 @@
           <option value="time">Time</option>
         </SelectInput>
 
-        <SelectInput
+        <TextInput
           placeholder="Dataset category"
-          :name="'type-' + index"
+          :name="'category-' + index"
           required
           v-model="categories[index]"
-        >
-          <optgroup label="Numerical values">
-            <option value="price">Price</option>
-            <option value="quantity">Quantity</option>
-            <option value="rating">Rating</option>
-            <option value="percentage">Percentage</option>
-            <option value="count">Count</option>
-          </optgroup>
-          <optgroup label="Date and time">
-            <option value="Start of">Start of</option>
-            <option value="End of">End of</option>
-            <option value="Duration">Duration</option>
-          </optgroup>
-          <optgroup label="Geographical">
-            <option value="Country">Country</option>
-            <option value="State">State</option>
-            <option value="City">City</option>
-            <option value="Address">Address</option>
-            <option value="Zip code">Zip code</option>
-            <option value="Latitude">Latitude</option>
-            <option value="Longitude">Longitude</option>
-          </optgroup>
-        </SelectInput>
+          autocomplete="off"
+        />
       </template>
     </div>
     <br />
-    <div class="flex items-center w-full justify-between">
+    <div class="flex flex-row items-center w-full justify-between gap-4">
       <Button variant="outlined" @click="resetStages">Cancel</Button>
-      <div class="flex">
+      <div class="flex gap-2 justify-end">
         <Button @click="previousStage">Previous</Button>
-        <Button type="submit">Next</Button>
+        <Button type="submit">Save</Button>
       </div>
     </div>
   </form>
 </template>
 
 <script setup lang="ts">
+import type { ColumnAnalysis } from "~/utils/decisionTree";
+import { detectDataTypes } from "~/utils/decisionTree";
+
 definePageMeta({
   layout: "dashboard",
 });
@@ -196,12 +214,21 @@ const descriptions = ref<Array<string>>([]);
 const dataTypes = ref<Array<string>>([]);
 const categories = ref<Array<string>>([]);
 
+const analysisResults = ref<ColumnAnalysis[]>([]);
+const previewIndex = ref<number | null>(null);
+
 const commonStyle =
-  "bg-space-100 border-space-300 text-space-950 border rounded-md border-space-100 w-3/4 h-3/4 ";
+  "bg-space-100 border-space-300 text-space-950 border rounded-md border-space-100 w-5/6 h-3/4 ";
+
+const previews = ref<Map<number, HTMLElement>>(new Map());
 
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
 const handleInput = () => processFiles(fileInput.value?.files);
+
+const showPreview = (index: number) => {
+  previewIndex.value = previewIndex.value === index ? null : index;
+};
 
 const processFiles = async (files: FileList | undefined | null) => {
   if (files == null) {
@@ -227,12 +254,36 @@ const processFiles = async (files: FileList | undefined | null) => {
 
   nextStage();
 
+  const fileContent = await datasetFile.text();
+
   columns.value = (
     await parseCsv({
       file: datasetFile,
       options: { start: 0, end: 1 },
     })
   )[0];
+
+  analysisResults.value = detectDataTypes(fileContent);
+
+  names.value = analysisResults.value.map(
+    (result: ColumnAnalysis) => result.header
+  );
+  descriptions.value = columns.value.map(() => "");
+  dataTypes.value = analysisResults.value.map((result: ColumnAnalysis) => {
+    switch (result.dataType) {
+      case "number":
+        return "number";
+      case "date":
+        return "date";
+      case "boolean":
+        return "boolean";
+      default:
+        return "string";
+    }
+  });
+  categories.value = analysisResults.value.map((result: ColumnAnalysis) => {
+    return result.dataFormat === "unknown" ? "" : result.dataFormat;
+  });
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -290,4 +341,47 @@ const uploadDataset = async () => {
 
   navigateTo(`/datasets/${data.value.id}`);
 };
+
+function getPreviewPosition(index: number): string {
+  const preview = previews.value.get(index);
+  if (!preview) return "transform: translateY(0)";
+
+  const rect = preview.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const spaceBelow = viewportHeight - rect.top;
+
+  if (spaceBelow < rect.height + 20) {
+    return `transform: translateY(calc(-100% - 40px))`;
+  }
+
+  return "transform: translateY(0)";
+}
+
+function setPreviewRef(
+  el: Element | ComponentPublicInstance | null,
+  index: number
+) {
+  if (el && el instanceof HTMLElement) {
+    previews.value.set(index, el);
+  } else {
+    previews.value.delete(index);
+  }
+}
+
+const handleClickOutside = (e: MouseEvent) => {
+  if (
+    previewIndex.value !== null &&
+    !(e.target as HTMLElement).closest(".relative")
+  ) {
+    previewIndex.value = null;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
