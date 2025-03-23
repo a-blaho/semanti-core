@@ -35,6 +35,7 @@
             >Metadata</TabsTrigger
           >
           <TabsTrigger
+            v-if="isOwner"
             value="settings"
             class="px-8 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
             >Settings</TabsTrigger
@@ -174,6 +175,7 @@
                   <Icon name="heroicons:clipboard" class="w-4 h-4" />
                 </Button>
                 <Button
+                  v-if="isOwner"
                   variant="ghost"
                   size="sm"
                   class="h-8 w-8 p-0"
@@ -205,14 +207,14 @@
             <div class="p-6">
               <textarea
                 v-model="editableMetadata"
-                :disabled="!isEditing"
+                :disabled="!isEditing || !isOwner"
                 class="w-full h-[500px] font-mono text-sm p-2 border rounded focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
                 @input="validateMetadata"
               ></textarea>
             </div>
           </div>
         </TabsContent>
-        <TabsContent value="settings" class="pt-4">
+        <TabsContent v-if="isOwner" value="settings" class="pt-4">
           <div class="border rounded-lg p-6">
             <h2 class="text-xl font-bold mb-6">Dataset Settings</h2>
             <div class="space-y-6">
@@ -286,6 +288,8 @@ const datasetId = computed(() => {
   const id = route.params.id;
   return Array.isArray(id) ? id[0] : id;
 });
+
+const isOwner = ref(false);
 
 const dataset = ref<null | {
   id: string;
@@ -433,7 +437,7 @@ onMounted(async () => {
   const [{ data }, { data: datasetFile }] = await Promise.all([
     client
       .from("datasets")
-      .select("id, owner ( name ), metadata, size, public")
+      .select("id, owner ( name, id ), metadata, size, public")
       .eq("id", datasetId.value),
 
     client.storage
@@ -442,6 +446,11 @@ onMounted(async () => {
   ]);
 
   if (data?.length) {
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    isOwner.value = user?.id === data[0].owner.id;
+
     dataset.value = {
       id: data[0].id,
       metadata: toMetadata(data[0].metadata),
