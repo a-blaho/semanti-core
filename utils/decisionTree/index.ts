@@ -373,7 +373,7 @@ function analyzeColumn(
     let mainReason = isInteger
       ? "Integer values detected"
       : "Decimal numbers detected";
-    let details = [
+    const details = [
       `Range: ${stats.min} to ${stats.max}`,
       `Mean: ${stats.mean.toFixed(2)}`,
       `Median: ${stats.median.toFixed(2)}`,

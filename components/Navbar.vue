@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button } from "~/components/ui/button";
+import { Button, type ButtonVariants } from "~/components/ui/button";
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -14,6 +14,8 @@ const signOut = async () => {
   await client.auth.signOut();
   navigateTo("/");
 };
+
+const buttonVariant: ButtonVariants["variant"] = "ghost";
 </script>
 
 <template>
@@ -77,7 +79,7 @@ const signOut = async () => {
       </NavigationMenu>
     </ClientOnly>
     <Button
-      variant="ghost"
+      :variant="buttonVariant"
       class="text-white/70 hover:text-white hover:bg-white/10"
       @click="signOut"
     >
