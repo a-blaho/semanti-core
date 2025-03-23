@@ -1,7 +1,7 @@
 <template>
   <svg
     class="animate-spin"
-    :class="class"
+    :class="className"
     xmlns="http://www.w3.org/2000/svg"
     fill="none"
     viewBox="0 0 24 24"
@@ -24,9 +24,9 @@
 
 <script setup lang="ts">
 defineProps({
-  class: {
+  className: {
     type: String,
-    default: "h-5 w-5 text-space-50",
+    default: "h-5 w-5 text-muted-foreground",
   },
 });
 </script>

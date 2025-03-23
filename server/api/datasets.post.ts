@@ -49,18 +49,49 @@ export default defineEventHandler(async (event) => {
     public: metadata.public,
     size: metadata.size,
     metadata: {
-      "@context": "http://www.w3.org/ns/csvw",
-      url: `${datasetId}.csv`,
-      "dc:title": metadata.name,
-      "dc:description": metadata.description,
-      tableSchema: {
-        columns: metadata.columns.map((column: any) => ({
-          titles: column.title,
-          "dc:title": column.name,
-          "dc:description": column.description,
-          datatype: column.dataType,
-        })),
-      },
+      "@context": ["http://www.w3.org/ns/csvw", { "@language": "en" }],
+      "@type": "TableGroup",
+      tables: [
+        {
+          "@type": "Table",
+          url: `${datasetId}.csv`,
+          "dc:title": metadata.name,
+          "dc:description": metadata.description,
+          tableSchema: {
+            "@type": "Schema",
+            columns: metadata.columns.map((column: any) => ({
+              name: column.title.toLowerCase().replace(/\s+/g, "_"),
+              titles: column.title,
+              "dc:title": column.name,
+              "dc:description": column.description,
+              datatype: {
+                base: column.datatype,
+                format: column.category || undefined,
+              },
+              required: true,
+              suppressOutput: false,
+            })),
+            aboutUrl:
+              "#{" +
+              metadata.columns[0].title.toLowerCase().replace(/\s+/g, "_") +
+              "}",
+            primaryKey: undefined,
+            foreignKeys: [],
+          },
+          dialect: {
+            "@type": "Dialect",
+            delimiter: ",",
+            encoding: "utf-8",
+            header: true,
+            headerRowCount: 1,
+            trim: false,
+            skipBlankRows: true,
+            lineTerminators: ["\r\n", "\n"],
+            quoteChar: '"',
+            doubleQuote: true,
+          },
+        },
+      ],
     },
   });
 

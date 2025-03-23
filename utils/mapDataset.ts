@@ -5,6 +5,7 @@ export type Dataset = {
   size: number;
   owner: { name: string };
   public: boolean;
+  created_at: string;
 };
 
 export function toDataset(dataset: any): Dataset {
@@ -15,5 +16,6 @@ export function toDataset(dataset: any): Dataset {
     size: dataset.size,
     owner: { name: dataset.owner.name },
     public: dataset.public,
+    created_at: dataset.created_at,
   };
 }

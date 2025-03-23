@@ -1,88 +1,279 @@
 <template>
   <div
     v-if="dataset"
-    style="
-      display: grid;
-      grid-template-areas:
-        'info'
-        'main';
-      grid-template-rows: 4rem 1fr;
-      height: 100vh;
-    "
-    class="w-full py-8 px-16"
+    class="w-full py-8 px-16 grid grid-rows-[4rem_1fr] h-screen bg-background"
   >
-    <div
-      class="flex justify-between items-end w-full pb-2"
-      style="grid-area: info"
-    >
+    <div class="flex justify-between items-end w-full pb-2">
       <div>
-        <p>
-          {{ dataset.owner.name }}
-        </p>
-        <h1 class="text-2xl font-bold">{{ dataset.metadata["dc:title"] }}</h1>
+        <p>{{ dataset.owner.name }}</p>
+        <h1 class="text-2xl font-bold">
+          {{ dataset.metadata.tables[0]["dc:title"] }}
+        </h1>
       </div>
       <div>
         <DatasetStar :dataset-id="dataset.id" />
       </div>
     </div>
-    <div style="grid-area: main" class="overflow-auto">
-      <HeadlessTabGroup>
-        <HeadlessTabList
-          class="flex border-b border-space-500 text-lg top-0 sticky bg-space-50"
+    <div class="overflow-auto">
+      <Tabs default-value="general" class="w-full">
+        <TabsList
+          class="border-b border-border text-lg top-0 sticky bg-background w-full justify-start h-auto p-0"
         >
-          <HeadlessTab :class="tabStyle">General</HeadlessTab>
-          <HeadlessTab :class="tabStyle">Preview</HeadlessTab>
-        </HeadlessTabList>
-        <HeadlessTabPanels class="pt-4">
-          <HeadlessTabPanel class="flex flex-col gap-16">
-            <div>
-              <h2 class="text-xl font-bold">Description</h2>
-              <p class="text-lg">{{ dataset.metadata["dc:description"] }}</p>
+          <TabsTrigger
+            value="general"
+            class="px-8 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+            >General</TabsTrigger
+          >
+          <TabsTrigger
+            value="preview"
+            class="px-8 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+            >Preview</TabsTrigger
+          >
+          <TabsTrigger
+            value="metadata"
+            class="px-8 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+            >Metadata</TabsTrigger
+          >
+          <TabsTrigger
+            value="settings"
+            class="px-8 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none"
+            >Settings</TabsTrigger
+          >
+        </TabsList>
+        <TabsContent value="general" class="pt-4 space-y-4">
+          <div class="border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Description</h2>
+            <p class="text-lg text-muted-foreground">
+              {{ dataset.metadata.tables[0]["dc:description"] }}
+            </p>
+          </div>
+          <div class="border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Dataset Information</h2>
+            <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+              <div>
+                <h3 class="font-semibold">Size</h3>
+                <p class="text-muted-foreground">
+                  {{ formatBytes(dataset.size) }}
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold">Columns</h3>
+                <p class="text-muted-foreground">
+                  {{ dataset.metadata.tables[0].tableSchema.columns.length }}
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold">Access</h3>
+                <p class="text-muted-foreground">
+                  {{ dataset.public ? "Public" : "Private" }}
+                </p>
+              </div>
+              <div>
+                <h3 class="font-semibold">Owner</h3>
+                <p class="text-muted-foreground">{{ dataset.owner.name }}</p>
+              </div>
             </div>
-            <div class="flex justify-between gap-16">
-              <Button class="w-full" @click="downloadDataset()">
-                Download CSV ({{ formatBytes(dataset.size) }})
-              </Button>
-              <Button class="w-full" @click="downloadMetadata()"
-                >Download metadata</Button
+          </div>
+          <div class="border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Schema Overview</h2>
+            <div class="space-y-4">
+              <div
+                v-for="column in dataset.metadata.tables[0].tableSchema.columns"
+                class="border-b pb-4 last:border-0 last:pb-0"
               >
-            </div>
-            <div>
-              <h2 class="text-xl font-bold">Comments</h2>
-              <p>No comments yet</p>
-            </div>
-          </HeadlessTabPanel>
-          <HeadlessTabPanel class="overflow-auto">
-            <table class="font-mono w-full">
-              <thead>
-                <tr>
-                  <th
-                    class="border border-gray-400 px-4 py-2"
-                    v-for="column in dataset.metadata.tableSchema.columns"
+                <h3 class="font-semibold">
+                  {{ column["dc:title"] }}
+                </h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  {{ column["dc:description"] }}
+                </p>
+                <div class="flex gap-4 mt-2 text-sm">
+                  <span class="text-muted-foreground">
+                    <span class="font-medium">Type:</span>
+                    {{ column.datatype.base }}
+                  </span>
+                  <span
+                    class="text-muted-foreground"
+                    v-if="column.datatype.format"
                   >
-                    {{ column["titles"] }}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="row in rows">
-                  <td
-                    class="border border-gray-400 px-4 py-2"
-                    v-for="item in row"
+                    <span class="font-medium">Format:</span>
+                    {{ column.datatype.format }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="preview" class="pt-4">
+          <div class="flex justify-end gap-2 mb-4">
+            <Button
+              @click="downloadDataset()"
+              variant="default"
+              class="flex items-center gap-2"
+            >
+              <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
+              Download CSV ({{ formatBytes(dataset.size) }})
+            </Button>
+          </div>
+          <div class="border rounded-lg overflow-hidden">
+            <div class="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead
+                      v-for="column in dataset.metadata.tables[0].tableSchema
+                        .columns"
+                    >
+                      {{ column["titles"] }}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow v-for="row in rows">
+                    <TableCell
+                      v-for="item in row"
+                      class="font-mono whitespace-nowrap"
+                    >
+                      {{ item }}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="metadata" class="pt-4">
+          <div class="flex justify-end gap-2 mb-4">
+            <Button
+              @click="downloadMetadata()"
+              variant="default"
+              class="flex items-center gap-2"
+            >
+              <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
+              Download metadata
+            </Button>
+          </div>
+          <div class="border rounded-lg overflow-hidden">
+            <div
+              class="bg-muted px-6 py-3 border-b flex justify-between items-center"
+            >
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-semibold">Raw Metadata</h3>
+                <span v-if="isEditing" class="text-xs text-primary font-medium">
+                  (Editing)
+                </span>
+              </div>
+              <div class="flex items-center gap-2">
+                <Button
+                  v-if="!isEditing"
+                  variant="ghost"
+                  size="sm"
+                  class="h-8 w-8 p-0"
+                  @click="copyToClipboard"
+                >
+                  <Icon name="heroicons:clipboard" class="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="h-8 w-8 p-0"
+                  :class="{ 'text-primary': isEditing }"
+                  @click="isEditing ? saveMetadata() : (isEditing = true)"
+                  :disabled="isEditing && !hasMetadataChanges"
+                >
+                  <Icon
+                    :name="
+                      isEditing ? 'heroicons:check' : 'heroicons:pencil-square'
+                    "
+                    class="w-4 h-4"
+                  />
+                </Button>
+                <Button
+                  v-if="isEditing"
+                  variant="ghost"
+                  size="sm"
+                  class="h-8 w-8 p-0"
+                  @click="cancelEditing"
+                >
+                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                </Button>
+                <p v-if="metadataError" class="text-sm text-destructive">
+                  {{ metadataError }}
+                </p>
+              </div>
+            </div>
+            <div class="p-6">
+              <textarea
+                v-model="editableMetadata"
+                :disabled="!isEditing"
+                class="w-full h-[500px] font-mono text-sm p-2 border rounded focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
+                @input="validateMetadata"
+              ></textarea>
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="settings" class="pt-4">
+          <div class="border rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-6">Dataset Settings</h2>
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-lg font-medium mb-4">Access Control</h3>
+                <div class="flex items-center gap-4">
+                  <label
+                    class="relative inline-flex items-center cursor-pointer"
                   >
-                    {{ item }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </HeadlessTabPanel>
-        </HeadlessTabPanels>
-      </HeadlessTabGroup>
+                    <Switch
+                      v-model="isPublic"
+                      @update:model-value="togglePublicAccess"
+                    />
+                  </label>
+                  <span class="text-sm font-medium">Make dataset public</span>
+                </div>
+                <p class="mt-2 text-sm text-muted-foreground">
+                  {{
+                    isPublic
+                      ? "Anyone can view this dataset"
+                      : "Only you can view this dataset"
+                  }}
+                </p>
+              </div>
+              <div>
+                <h3 class="text-lg font-medium mb-4">Danger Zone</h3>
+                <div
+                  class="border border-destructive/20 rounded-lg p-4 bg-destructive/5"
+                >
+                  <h4 class="text-destructive font-medium mb-2">
+                    Delete Dataset
+                  </h4>
+                  <p class="text-destructive/90 text-sm mb-4">
+                    Once you delete a dataset, there is no going back. Please be
+                    certain.
+                  </p>
+                  <Button variant="destructive" @click="confirmDelete">
+                    Delete Dataset
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "~/components/ui/button";
+import { Switch } from "~/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import type { Database } from "~/database.types";
 
 definePageMeta({
@@ -91,17 +282,106 @@ definePageMeta({
 
 const client = useSupabaseClient<Database>();
 const route = useRoute();
+const datasetId = computed(() => {
+  const id = route.params.id;
+  return Array.isArray(id) ? id[0] : id;
+});
 
 const dataset = ref<null | {
   id: string;
   metadata: Metadata;
   owner: { name: string };
   size: number;
+  public: boolean;
 }>(null);
 const rows = ref<any>([]);
 
-const tabStyle =
-  "border-b px-8 ui-selected:border-space-950 focus:outline-none";
+const editableMetadata = ref("");
+const metadataError = ref("");
+const hasMetadataChanges = ref(false);
+const isEditing = ref(false);
+const isPublic = ref(false);
+
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(editableMetadata.value);
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+  }
+};
+
+const validateMetadata = () => {
+  try {
+    JSON.parse(editableMetadata.value);
+    metadataError.value = "";
+    hasMetadataChanges.value =
+      editableMetadata.value !==
+      JSON.stringify(dataset.value?.metadata, null, 2);
+  } catch (e) {
+    metadataError.value = "Invalid JSON format";
+    hasMetadataChanges.value = false;
+  }
+};
+
+const cancelEditing = () => {
+  isEditing.value = false;
+  editableMetadata.value = JSON.stringify(dataset.value?.metadata, null, 2);
+  metadataError.value = "";
+  hasMetadataChanges.value = false;
+};
+
+const saveMetadata = async () => {
+  try {
+    const updatedMetadata = JSON.parse(editableMetadata.value);
+    const { error } = await client
+      .from("datasets")
+      .update({ metadata: updatedMetadata })
+      .eq("id", datasetId.value);
+
+    if (error) throw error;
+
+    // Update local state
+    if (dataset.value) {
+      dataset.value.metadata = updatedMetadata;
+    }
+    hasMetadataChanges.value = false;
+    isEditing.value = false;
+  } catch (error) {
+    metadataError.value =
+      error instanceof Error ? error.message : "Failed to save metadata";
+  }
+};
+
+const confirmDelete = async () => {
+  if (
+    !window.confirm(
+      "Are you sure you want to delete this dataset? This action cannot be undone."
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const filePath = `${datasetId.value}/${datasetId.value}.csv`;
+
+    // Delete the CSV file from storage
+    await client.storage.from("datasets").remove([filePath]);
+
+    // Delete the dataset record from the database
+    const { error } = await client
+      .from("datasets")
+      .delete()
+      .eq("id", datasetId.value);
+
+    if (error) throw error;
+
+    // Navigate back to the dashboard
+    navigateTo("/dashboard");
+  } catch (error) {
+    console.error("Error deleting dataset:", error);
+    alert("Failed to delete dataset. Please try again.");
+  }
+};
 
 const downloadMetadata = async () => {
   const metadata = dataset.value?.metadata;
@@ -113,7 +393,7 @@ const downloadMetadata = async () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${route.params.id}-metadata.json`;
+  a.download = `${datasetId.value}-metadata.json`;
   a.click();
   URL.revokeObjectURL(url);
 };
@@ -121,23 +401,44 @@ const downloadMetadata = async () => {
 const downloadDataset = async () => {
   const { data: url } = await client.storage
     .from("datasets")
-    .createSignedUrl(`${route.params.id}/${route.params.id}.csv`, 60);
+    .createSignedUrl(`${datasetId.value}/${datasetId.value}.csv`, 60);
 
   if (!url) return;
 
   navigateTo(url.signedUrl, { external: true });
 };
 
+const togglePublicAccess = async () => {
+  try {
+    const { error } = await client
+      .from("datasets")
+      .update({ public: isPublic.value })
+      .eq("id", datasetId.value);
+
+    if (error) throw error;
+
+    // Update local state
+    if (dataset.value) {
+      dataset.value.public = isPublic.value;
+    }
+  } catch (error) {
+    console.error("Error updating dataset access:", error);
+    // Revert the toggle if the update failed
+    isPublic.value = !isPublic.value;
+    alert("Failed to update dataset access. Please try again.");
+  }
+};
+
 onMounted(async () => {
   const [{ data }, { data: datasetFile }] = await Promise.all([
     client
       .from("datasets")
-      .select("id, owner ( name ), metadata, size")
-      .eq("id", route.params.id),
+      .select("id, owner ( name ), metadata, size, public")
+      .eq("id", datasetId.value),
 
     client.storage
       .from("datasets")
-      .download(`${route.params.id}/${route.params.id}.csv`),
+      .download(`${datasetId.value}/${datasetId.value}.csv`),
   ]);
 
   if (data?.length) {
@@ -149,7 +450,12 @@ onMounted(async () => {
         name: data[0].owner.name,
       },
       size: data[0].size,
+      public: data[0].public,
     };
+    // Initialize editable metadata
+    editableMetadata.value = JSON.stringify(dataset.value.metadata, null, 2);
+    // Initialize public status
+    isPublic.value = dataset.value.public;
   }
   if (datasetFile) {
     rows.value = await parseCsv({

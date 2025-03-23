@@ -1,197 +1,347 @@
 <template>
-  <h1 class="text-2xl text-space-950">
-    {{
-      stage === 1
-        ? "Upload your dataset"
-        : stage === 2
-        ? "Analyzing your file"
-        : stage === 3
-        ? "Dataset information"
-        : "Columns information"
-    }}
-  </h1>
-  <div class="flex">
-    <Icon
-      name="octicon:dot-fill-24"
-      v-for="_ of stage"
-      class="text-space-950 h-8 w-8"
-    />
-    <Icon
-      name="octicon:dot-24"
-      v-for="_ of 4 - stage"
-      class="text-space-950 h-8 w-8"
-    />
-  </div>
-
-  <label
-    v-if="stage === 1"
-    class="flex flex-col hover:border-space-900 cursor-pointer justify-center items-center"
-    :class="commonStyle"
-    @drop.prevent="handleDrop"
-    @dragover.prevent
-  >
-    <Icon name="uil:upload" class="w-16 h-16" />
-    <p>Click to upload or drop your CSV file here</p>
-    <input
-      @input="handleInput"
-      id="dropzone"
-      class="hidden"
-      type="file"
-      ref="fileInput"
-      accept=".csv"
-    />
-    <p class="text-red-500 text-sm">{{ errorMessage }}</p>
-  </label>
-
-  <div
-    v-if="stage === 2"
-    class="flex flex-col items-center justify-center"
-    :class="commonStyle"
-  >
-    <Loading class="text-space-950 w-64 h-64" />
-  </div>
-
-  <form
-    v-if="stage === 3"
-    class="flex flex-col items-center justify-between gap-2 px-8 py-4"
-    :class="commonStyle"
-    @submit.prevent="nextStage"
-  >
-    <div class="w-full flex justify-between">
-      <TextInput
-        class="w-3/4"
-        name="datasetName"
-        placeholder="Dataset name"
-        required
-        v-model="datasetName"
-        autocomplete="off"
-      />
-
-      <div class="flex gap-1 items-center">
-        <input v-model="publicDataset" type="checkbox" id="public" />
-        <label for="public">Public dataset</label>
+  <div class="w-full max-w-5xl mx-auto py-8 px-6">
+    <h1 class="text-3xl font-semibold mb-6">
+      {{
+        stage === 1
+          ? "Upload your dataset"
+          : stage === 2
+            ? "Analyzing your file"
+            : stage === 3
+              ? "Dataset information"
+              : "Configure columns"
+      }}
+    </h1>
+    <div class="flex gap-2 mb-8">
+      <div
+        v-for="step of 4"
+        :key="step"
+        class="flex items-center"
+        :class="step !== 4 && 'flex-1'"
+      >
+        <div
+          class="h-2 w-2 rounded-full transition-all duration-200"
+          :class="step <= stage ? 'bg-primary scale-125' : 'bg-border'"
+        ></div>
+        <div
+          v-if="step !== 4"
+          class="h-0.5 w-full transition-all duration-200"
+          :class="step < stage ? 'bg-primary' : 'bg-border'"
+        ></div>
       </div>
     </div>
-    <textarea
-      name="datasetDescription"
-      placeholder="Dataset description"
-      v-model="datasetDescription"
-      cols="75"
-      rows="12"
-      required
-      class="border rounded-md p-1 w-full h-full focus:outline-none focus:border-space-900"
-    >
-    </textarea>
-    <div class="flex items-center w-full justify-between">
-      <Button variant="outlined" @click="resetStages">Cancel</Button>
-      <div class="flex">
-        <Button @click="previousStage">Previous</Button>
-        <Button type="submit">Next</Button>
-      </div>
-    </div>
-  </form>
 
-  <form
-    v-if="stage === 4"
-    class="flex flex-col items-center justify-between gap-2 px-8 py-4 overflow-y-auto"
-    :class="commonStyle"
-    @submit.prevent="uploadDataset"
-  >
-    <div class="grid grid-cols-5 gap-4 overflow-visible w-full">
-      <template v-for="(column, index) in columns">
-        <div class="flex items-center gap-2">
-          <label class="font-mono truncate" :for="column + '-' + index">
-            {{ names[index] }}
+    <div v-if="stage === 1" class="flex flex-col items-center w-full gap-4">
+      <div class="flex items-center gap-4 w-full max-w-3xl justify-end">
+        <div class="flex items-center space-x-2">
+          <Switch v-model="useOpenAI" />
+          <label
+            for="use-ai"
+            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Use AI to analyze dataset
           </label>
-          <div class="relative">
-            <button
+        </div>
+      </div>
+
+      <label
+        class="flex flex-col hover:border-primary hover:bg-primary/5 cursor-pointer justify-center items-center transition-colors duration-200 max-w-3xl w-full"
+        :class="[
+          'bg-background border-2 border-dashed rounded-lg h-96',
+          errorMessage ? 'border-destructive/50' : 'border-border',
+        ]"
+        @drop.prevent="handleDrop"
+        @dragover.prevent
+      >
+        <Icon name="uil:upload" class="w-16 h-16 text-primary mb-4" />
+        <p class="text-muted-foreground">
+          Click to upload or drop your CSV file here
+        </p>
+        <input
+          @input="handleInput"
+          id="dropzone"
+          class="hidden"
+          type="file"
+          ref="fileInput"
+          accept=".csv"
+        />
+        <p class="text-destructive text-sm mt-2">{{ errorMessage }}</p>
+      </label>
+    </div>
+
+    <div
+      v-if="stage === 2"
+      class="flex flex-col items-center justify-center max-w-3xl mx-auto h-96 bg-background border-2 border-dashed border-border rounded-lg"
+    >
+      <Loading className="text-primary w-16 h-16" />
+      <p class="text-muted-foreground mt-4">Analyzing your dataset...</p>
+    </div>
+
+    <form
+      v-if="stage === 3"
+      class="flex flex-col items-center justify-between gap-6 p-6 bg-card border rounded-lg max-w-3xl mx-auto"
+      @submit.prevent="nextStage"
+    >
+      <div class="w-full flex justify-between gap-6">
+        <Input
+          class="flex-1"
+          name="datasetName"
+          placeholder="Dataset name"
+          required
+          v-model="datasetName"
+          autocomplete="off"
+        />
+
+        <div class="flex items-center space-x-2">
+          <Switch id="public" v-model:checked="publicDataset" />
+          <label
+            for="public"
+            class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Public dataset
+          </label>
+        </div>
+      </div>
+      <Textarea
+        name="datasetDescription"
+        placeholder="Dataset description"
+        v-model="datasetDescription"
+        required
+        class="w-full h-48 resize-none"
+      />
+      <div class="flex items-center w-full justify-between">
+        <Button
+          variant="outline"
+          @click="resetStages"
+          class="text-muted-foreground"
+        >
+          Cancel
+        </Button>
+        <div class="flex gap-2">
+          <Button variant="outline" @click="previousStage">Previous</Button>
+          <Button type="submit">Next</Button>
+        </div>
+      </div>
+    </form>
+
+    <form
+      v-if="stage === 4"
+      class="flex flex-col gap-6 p-6 bg-card border rounded-lg max-w-5xl mx-auto"
+      @submit.prevent="uploadDataset"
+    >
+      <div class="grid grid-cols-5 gap-4 w-full">
+        <div class="col-span-5 pb-2 mb-2 border-b">
+          <div
+            class="grid grid-cols-5 gap-4 text-sm font-medium text-muted-foreground"
+          >
+            <div>Column</div>
+            <div>Name</div>
+            <div>Description</div>
+            <div>Data Type</div>
+            <div>Category</div>
+          </div>
+        </div>
+
+        <template v-for="(column, index) in columns">
+          <div class="flex items-center gap-2">
+            <label
+              class="text-sm truncate text-foreground"
+              :for="column + '-' + index"
+            >
+              {{ names[index] }}
+            </label>
+            <Button
               type="button"
-              class="text-sm text-gray-500 hover:text-gray-700"
+              variant="ghost"
+              size="sm"
+              class="text-muted-foreground hover:text-primary"
               @click="() => showPreview(index)"
             >
-              <Icon name="heroicons:eye" class="w-5 h-5" />
-            </button>
-            <div
-              v-if="previewIndex === index"
-              class="fixed z-[100] mt-2 bg-white rounded-md shadow-lg p-4 min-w-[200px]"
-              :style="getPreviewPosition(index)"
-              :ref="(el) => setPreviewRef(el, index)"
-            >
-              <h3 class="font-bold mb-2">Sample Values:</h3>
-              <ul class="text-sm">
+              <Icon name="heroicons:eye" class="w-4 h-4" />
+            </Button>
+          </div>
+
+          <Input
+            :name="'name-' + index"
+            placeholder="Name"
+            v-model="names[index]"
+            required
+            autocomplete="off"
+          />
+
+          <Input
+            :name="'description-' + index"
+            placeholder="Description"
+            v-model="descriptions[index]"
+            required
+            autocomplete="off"
+          />
+
+          <Select v-model="dataTypes[index]" :name="'type-' + index" required>
+            <SelectTrigger class="w-full">
+              <SelectValue
+                :placeholder="dataTypes[index] || 'Select data type'"
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="boolean">Boolean</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="datetime">Datetime</SelectItem>
+              <SelectItem value="duration">Duration</SelectItem>
+              <SelectItem value="number">Number</SelectItem>
+              <SelectItem value="string">String</SelectItem>
+              <SelectItem value="time">Time</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Input
+            placeholder="Dataset category"
+            :name="'category-' + index"
+            required
+            v-model="categories[index]"
+            autocomplete="off"
+          />
+        </template>
+      </div>
+
+      <div class="flex items-center w-full justify-between pt-4 border-t mt-2">
+        <Button
+          variant="outline"
+          @click="resetStages"
+          class="text-muted-foreground"
+        >
+          Cancel
+        </Button>
+        <div class="flex gap-2">
+          <Button variant="outline" @click="previousStage">Previous</Button>
+          <Button type="submit">Save Dataset</Button>
+        </div>
+      </div>
+    </form>
+
+    <!-- Preview Dialog -->
+    <Dialog
+      :open="previewIndex !== null"
+      @update:open="(val: boolean) => !val && (previewIndex = null)"
+    >
+      <DialogContent class="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{{
+            previewIndex !== null ? names[previewIndex] : ""
+          }}</DialogTitle>
+        </DialogHeader>
+        <div class="space-y-6">
+          <div>
+            <h3 class="font-medium text-foreground mb-3">Analysis Results</h3>
+            <div class="bg-muted rounded-lg p-4">
+              <p class="text-foreground">
+                {{
+                  previewIndex !== null
+                    ? analysisResults[previewIndex].reasoning.mainReason
+                    : ""
+                }}
+              </p>
+              <ul class="mt-3 space-y-2">
                 <li
-                  v-for="value in analysisResults[index].sampleValues"
-                  class="truncate"
+                  v-for="(detail, i) in previewIndex !== null
+                    ? analysisResults[previewIndex].reasoning.details
+                    : []"
+                  :key="i"
+                  class="text-sm text-muted-foreground flex items-start"
+                >
+                  <span class="text-primary mr-2">•</span>
+                  {{ detail }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="font-medium text-foreground mb-3">Sample Values</h3>
+            <div class="bg-muted rounded-lg p-4">
+              <ul class="space-y-2">
+                <li
+                  v-for="value in previewIndex !== null
+                    ? analysisResults[previewIndex].sampleValues
+                    : []"
+                  class="text-sm text-muted-foreground font-mono truncate"
                 >
                   {{ value }}
                 </li>
               </ul>
-              <div class="mt-2 text-xs text-gray-500">
-                <p>Type: {{ dataTypes[index] }}</p>
-                <p>Format: {{ categories[index] }}</p>
-                <p>
-                  Confidence:
-                  {{ (analysisResults[index].confidence * 100).toFixed(1) }}%
-                </p>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="font-medium text-foreground mb-3">Statistics</h3>
+            <div class="bg-muted rounded-lg p-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="text-sm">
+                  <span class="text-muted-foreground">Type:</span>
+                  <span class="ml-1 text-foreground">{{
+                    previewIndex !== null ? dataTypes[previewIndex] : ""
+                  }}</span>
+                </div>
+                <div class="text-sm">
+                  <span class="text-muted-foreground">Format:</span>
+                  <span class="ml-1 text-foreground">{{
+                    previewIndex !== null ? categories[previewIndex] : ""
+                  }}</span>
+                </div>
+                <div class="text-sm">
+                  <span class="text-muted-foreground">Confidence:</span>
+                  <span class="ml-1 text-foreground">
+                    {{
+                      previewIndex !== null
+                        ? (
+                            analysisResults[previewIndex].confidence * 100
+                          ).toFixed(1)
+                        : ""
+                    }}%
+                  </span>
+                </div>
+                <div class="text-sm">
+                  <span class="text-muted-foreground">Missing:</span>
+                  <span class="ml-1 text-foreground">
+                    {{
+                      previewIndex !== null
+                        ? (
+                            analysisResults[previewIndex].missingValueRatio *
+                            100
+                          ).toFixed(1)
+                        : ""
+                    }}%
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        <TextInput
-          :name="'name-' + index"
-          placeholder="Name"
-          v-model="names[index]"
-          required
-          autocomplete="off"
-        />
-
-        <TextInput
-          :name="'description-' + index"
-          placeholder="Description"
-          v-model="descriptions[index]"
-          required
-          autocomplete="off"
-        />
-
-        <SelectInput
-          placeholder="Data type"
-          :name="'type-' + index"
-          required
-          v-model="dataTypes[index]"
-        >
-          <option value="boolean">Boolean</option>
-          <option value="date">Date</option>
-          <option value="datetime">Datetime</option>
-          <option value="duration">Duration</option>
-          <option value="number">Number</option>
-          <option value="string">String</option>
-          <option value="time">Time</option>
-        </SelectInput>
-
-        <TextInput
-          placeholder="Dataset category"
-          :name="'category-' + index"
-          required
-          v-model="categories[index]"
-          autocomplete="off"
-        />
-      </template>
-    </div>
-    <br />
-    <div class="flex flex-row items-center w-full justify-between gap-4">
-      <Button variant="outlined" @click="resetStages">Cancel</Button>
-      <div class="flex gap-2 justify-end">
-        <Button @click="previousStage">Previous</Button>
-        <Button type="submit">Save</Button>
-      </div>
-    </div>
-  </form>
+      </DialogContent>
+    </Dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import { Switch } from "~/components/ui/switch";
+import { Textarea } from "~/components/ui/textarea";
 import type { ColumnAnalysis } from "~/utils/decisionTree";
 import { detectDataTypes } from "~/utils/decisionTree";
+import { analyzeDataset } from "~/utils/openai";
 
 definePageMeta({
   layout: "dashboard",
@@ -202,6 +352,7 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const errorMessage = ref("");
 const stage = ref(1);
 const columns = ref<Array<string>>([]);
+const useOpenAI = ref(false);
 
 let datasetFile: File | null = null;
 
@@ -217,9 +368,6 @@ const categories = ref<Array<string>>([]);
 const analysisResults = ref<ColumnAnalysis[]>([]);
 const previewIndex = ref<number | null>(null);
 
-const commonStyle =
-  "bg-space-100 border-space-300 text-space-950 border rounded-md border-space-100 w-5/6 h-3/4 ";
-
 const previews = ref<Map<number, HTMLElement>>(new Map());
 
 const handleDrop = (event: DragEvent) =>
@@ -227,7 +375,7 @@ const handleDrop = (event: DragEvent) =>
 const handleInput = () => processFiles(fileInput.value?.files);
 
 const showPreview = (index: number) => {
-  previewIndex.value = previewIndex.value === index ? null : index;
+  previewIndex.value = index;
 };
 
 const processFiles = async (files: FileList | undefined | null) => {
@@ -255,39 +403,93 @@ const processFiles = async (files: FileList | undefined | null) => {
   nextStage();
 
   const fileContent = await datasetFile.text();
+  const parsedData = await parseCsv({
+    file: datasetFile,
+    options: { start: 0, end: 6 }, // Get headers + 5 rows for analysis
+  });
 
-  columns.value = (
-    await parseCsv({
-      file: datasetFile,
-      options: { start: 0, end: 1 },
-    })
-  )[0];
-
+  columns.value = parsedData[0];
   analysisResults.value = detectDataTypes(fileContent);
 
+  if (useOpenAI.value) {
+    try {
+      // Generate metadata and verify columns using ChatGPT
+      const analysis = await analyzeDataset(
+        datasetFile.name,
+        parsedData,
+        analysisResults.value
+      );
+
+      // Update form fields with generated metadata
+      datasetName.value = analysis.name;
+      datasetDescription.value = analysis.description;
+
+      // Update column information and analysis results
+      names.value = analysis.columns.map((col) => col.name);
+      descriptions.value = analysis.columns.map((col) => col.description);
+      dataTypes.value = analysis.columns.map((col) => col.dataType);
+      categories.value = analysis.columns.map((col) => col.category);
+
+      // Update analysis results with AI verification
+      analysisResults.value = analysisResults.value.map((result, index) => ({
+        ...result,
+        dataType: analysis.columns[index].dataType,
+        dataFormat: analysis.columns[index].category,
+        confidence: analysis.columns[index].confidence,
+        reasoning: analysis.columns[index].reasoning,
+      }));
+    } catch (error) {
+      console.error("Error during dataset analysis:", error);
+      useDefaultAnalysis();
+    }
+  } else {
+    useDefaultAnalysis();
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, 2000));
+  nextStage();
+};
+
+const useDefaultAnalysis = () => {
+  // Fallback to original behavior
   names.value = analysisResults.value.map(
     (result: ColumnAnalysis) => result.header
   );
   descriptions.value = columns.value.map(() => "");
-  dataTypes.value = analysisResults.value.map((result: ColumnAnalysis) => {
-    switch (result.dataType) {
-      case "number":
-        return "number";
-      case "date":
-        return "date";
-      case "boolean":
-        return "boolean";
-      default:
-        return "string";
+  dataTypes.value = analysisResults.value.map(
+    (result: ColumnAnalysis, index: number) => {
+      const columnName = result.header.toLowerCase();
+      const isIdColumn = /\bid\b/.test(columnName);
+
+      if (isIdColumn) {
+        return result.dataType === "number" ? "number" : "string";
+      }
+
+      switch (result.dataType) {
+        case "number":
+          return "number";
+        case "date":
+          return "date";
+        case "boolean":
+          return "boolean";
+        default:
+          return "string";
+      }
     }
-  });
-  categories.value = analysisResults.value.map((result: ColumnAnalysis) => {
-    return result.dataFormat === "unknown" ? "" : result.dataFormat;
-  });
+  );
 
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  categories.value = analysisResults.value.map(
+    (result: ColumnAnalysis, index: number) => {
+      const columnName = result.header.toLowerCase();
+      const isIdColumn = /\bid\b/.test(columnName);
 
-  nextStage();
+      if (isIdColumn) {
+        return "identifier";
+      }
+
+      return result.dataFormat === "unknown" ? "" : result.dataFormat;
+    }
+  );
 };
 
 const previousStage = () => stage.value--;
@@ -329,49 +531,23 @@ const uploadDataset = async () => {
   formData.append("dataset", datasetFile);
   formData.append("metadata", JSON.stringify(metadata));
 
-  const { error, data } = await useFetch("/api/datasets", {
-    method: "POST",
-    body: formData,
-  });
+  try {
+    const data = await $fetch("/api/datasets", {
+      method: "POST",
+      body: formData,
+    });
 
-  if (error.value != null || data.value == null) {
-    console.error(error.value);
-    return;
+    navigateTo(`/datasets/${data.id}`);
+  } catch (error) {
+    console.error("Error uploading dataset:", error);
   }
-
-  navigateTo(`/datasets/${data.value.id}`);
 };
-
-function getPreviewPosition(index: number): string {
-  const preview = previews.value.get(index);
-  if (!preview) return "transform: translateY(0)";
-
-  const rect = preview.getBoundingClientRect();
-  const viewportHeight = window.innerHeight;
-  const spaceBelow = viewportHeight - rect.top;
-
-  if (spaceBelow < rect.height + 20) {
-    return `transform: translateY(calc(-100% - 40px))`;
-  }
-
-  return "transform: translateY(0)";
-}
-
-function setPreviewRef(
-  el: Element | ComponentPublicInstance | null,
-  index: number
-) {
-  if (el && el instanceof HTMLElement) {
-    previews.value.set(index, el);
-  } else {
-    previews.value.delete(index);
-  }
-}
 
 const handleClickOutside = (e: MouseEvent) => {
   if (
     previewIndex.value !== null &&
-    !(e.target as HTMLElement).closest(".relative")
+    !(e.target as HTMLElement).closest(".w-96") &&
+    !(e.target as HTMLElement).closest("button")
   ) {
     previewIndex.value = null;
   }

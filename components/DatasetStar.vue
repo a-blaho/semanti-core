@@ -1,62 +1,95 @@
 <template>
-  <div class="flex items-center gap-1">
-    <p>{{ formatLargeNumber(starCount) }}</p>
-    <Icon
-      @click.stop="toggleStar"
-      :name="starred ? 'ic:round-star' : 'ic:round-star-border'"
-      class="cursor-pointer w-8 h-8"
-    />
+  <div class="flex items-center gap-2">
+    <Button
+      v-if="!iconOnly"
+      variant="ghost"
+      size="sm"
+      @click="toggleStar"
+      :disabled="isLoading"
+      class="flex items-center gap-1"
+    >
+      <Icon
+        :name="isStarred ? 'heroicons:star-solid' : 'heroicons:star'"
+        class="w-5 h-5"
+      />
+      {{ starCount }}
+    </Button>
+    <div v-else class="flex items-center gap-1">
+      <Icon
+        :name="isStarred ? 'heroicons:star-solid' : 'heroicons:star'"
+        class="w-5 h-5 text-muted-foreground"
+      />
+      <span class="text-sm text-muted-foreground">{{ starCount }}</span>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "~/components/ui/button";
 import type { Database } from "~/database.types";
 
-const props = defineProps({
-  datasetId: { required: true, type: String },
-});
+const props = defineProps<{
+  datasetId: string;
+  iconOnly?: boolean;
+}>();
 
-const user = useSupabaseUser();
 const client = useSupabaseClient<Database>();
 
-const starred = ref<boolean>(false);
+const isStarred = ref(false);
+const isLoading = ref(true);
 const starCount = ref<number>(0);
 
-if (!user.value) throw new Error("User not logged in");
-const [{ data }, { count }] = await Promise.all([
-  client
+onMounted(async () => {
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return;
+
+  const { data } = await client
     .from("stars")
     .select()
     .eq("dataset_id", props.datasetId)
-    .eq("user_id", user.value.id),
-  client
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  isStarred.value = data !== null;
+  isLoading.value = false;
+
+  const { count } = await client
     .from("stars")
     .select("dataset_id", { count: "exact" })
-    .eq("dataset_id", props.datasetId),
-]);
+    .eq("dataset_id", props.datasetId);
 
-starred.value = data ? data.length > 0 : false;
-starCount.value = count ?? 0;
+  starCount.value = count ?? 0;
+});
 
 const toggleStar = async () => {
-  if (!user.value) throw new Error("User not logged in");
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return;
 
-  if (starred.value) {
+  isLoading.value = true;
+
+  if (isStarred.value) {
     await client
       .from("stars")
       .delete()
       .eq("dataset_id", props.datasetId)
-      .eq("user_id", user.value.id);
+      .eq("user_id", user.id);
 
-    starred.value = false;
+    isStarred.value = false;
     starCount.value -= 1;
   } else {
-    await client
-      .from("stars")
-      .insert({ dataset_id: props.datasetId, user_id: user.value.id });
+    await client.from("stars").insert({
+      dataset_id: props.datasetId,
+      user_id: user.id,
+    });
 
-    starred.value = true;
+    isStarred.value = true;
     starCount.value += 1;
   }
+
+  isLoading.value = false;
 };
 </script>

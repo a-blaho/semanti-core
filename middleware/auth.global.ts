@@ -1,15 +1,10 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
-  const user = useSupabaseUser();
-  const isSignedIn = user.value != null;
+export default defineNuxtRouteMiddleware(async (to) => {
+  const client = useSupabaseClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
 
-  const unprotectedRoutes = ["/"];
-  const currentRoute = to.path;
-
-  if (!isSignedIn && !unprotectedRoutes.includes(currentRoute)) {
+  if (!user && to.path !== "/") {
     return navigateTo("/");
-  }
-
-  if (isSignedIn && unprotectedRoutes.includes(currentRoute)) {
-    return navigateTo("/dashboard");
   }
 });

@@ -5,23 +5,40 @@
       <br />
       <div class="w-full flex items-center justify-between">
         <div class="flex gap-1 items-center">
-          <TextInput
+          <Input
             autocomplete="off"
             name="search"
             v-model="searchBuffer"
             placeholder="Search datasets"
             class="w-96"
           />
-          <Button @click="search = searchBuffer" class="h-9">Search</Button>
+          <Button @click="search = searchBuffer" variant="default" class="h-9"
+            >Search</Button
+          >
         </div>
         <div class="flex items-center gap-1">
           <label class="w-24">Sort by:</label>
-          <SelectInput class="w-48" v-model="orderBy" name="search">
-            <option value="nameAsc">Name ascending</option>
-            <option value="nameDesc">Name descending</option>
-            <option value="createdAtAsc">Newest</option>
-            <option value="createdAtDesc">Oldest</option>
-          </SelectInput>
+          <Select v-model="orderBy" class="w-48">
+            <SelectTrigger>
+              <SelectValue
+                :placeholder="
+                  orderBy === 'nameAsc'
+                    ? 'Name ascending'
+                    : orderBy === 'nameDesc'
+                      ? 'Name descending'
+                      : orderBy === 'createdAtAsc'
+                        ? 'Newest'
+                        : 'Oldest'
+                "
+              />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="nameAsc">Name ascending</SelectItem>
+              <SelectItem value="nameDesc">Name descending</SelectItem>
+              <SelectItem value="createdAtAsc">Newest</SelectItem>
+              <SelectItem value="createdAtDesc">Oldest</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <br />
@@ -44,16 +61,20 @@
     <br />
     <div class="flex items-center justify-center gap-8">
       <Button
-        variant="outlined"
-        :disabled="page == 0 || pending"
+        variant="outline"
+        :disabled="page === 0 || !!pending"
         @click="page--"
       >
         Previous page
       </Button>
       {{ page + 1 }} / {{ Math.ceil((datasets?.total ?? 0) / pageSize) }}
       <Button
-        variant="outlined"
-        :disabled="isLastPage || pending"
+        variant="outline"
+        :disabled="
+          !!pending ||
+          (!!datasets &&
+            page >= Math.ceil((datasets.total ?? 0) / pageSize) - 1)
+        "
         @click="page++"
       >
         Next page
@@ -64,11 +85,21 @@
 </template>
 
 <script setup lang="ts">
+import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import type { Database } from "~/database.types";
 
 definePageMeta({ layout: "dashboard" });
 
 const client = useSupabaseClient<Database>();
+provide("page-context", "browse");
 
 const pageSize = 8;
 
@@ -76,7 +107,6 @@ const page = ref<number>(0);
 const searchBuffer = ref<string>("");
 const search = ref<string>("");
 const orderBy = ref<string>("nameAsc");
-const isLastPage = ref<boolean>(false);
 
 const { data: datasets, pending } = await useAsyncData(
   `browse:${page.value}:${search.value}:${orderBy.value}`,
@@ -85,7 +115,7 @@ const { data: datasets, pending } = await useAsyncData(
 
     const partialQuery = client
       .from("datasets")
-      .select("id, name, metadata, public, owner (name), size", {
+      .select("id, name, metadata, public, owner (name), size, created_at", {
         count: "exact",
       })
       .eq("public", true);
@@ -113,12 +143,6 @@ const { data: datasets, pending } = await useAsyncData(
         data: [],
         total: 0,
       };
-    }
-
-    if (count / pageSize - 1 <= page.value) {
-      isLastPage.value = true;
-    } else {
-      isLastPage.value = false;
     }
 
     return {

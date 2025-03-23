@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full py-16 px-24 flex flex-col justify-between">
+  <div class="w-full h-full py-16 px-24 grid grid-rows-[1fr_auto] gap-8">
     <div>
       <h1 class="text-3xl">My datasets</h1>
       <br />
@@ -19,10 +19,9 @@
         />
       </div>
     </div>
-    <br />
     <div class="flex items-center justify-center gap-8">
       <Button
-        variant="outlined"
+        variant="outline"
         :disabled="page == 0 || pending"
         @click="page--"
       >
@@ -30,42 +29,49 @@
       </Button>
       {{ page + 1 }} / {{ Math.ceil((myDatasets?.total ?? 0) / pageSize) }}
       <Button
-        variant="outlined"
+        variant="outline"
         :disabled="isLastPage || pending"
         @click="page++"
       >
         Next page
       </Button>
     </div>
-    <br />
   </div>
 </template>
 
 <script setup lang="ts">
+import { Button } from "~/components/ui/button";
 import type { Database } from "~/database.types";
+import { getPagination } from "~/utils/getPagination";
+import { toDataset } from "~/utils/mapDataset";
 
 definePageMeta({
   layout: "dashboard",
 });
 const client = useSupabaseClient<Database>();
-const user = useSupabaseUser();
+provide("page-context", "my-datasets");
 
-const pageSize = 8;
+const pageSize = 6;
 
 const page = ref<number>(0);
 const isLastPage = ref<boolean>(false);
 
 const { data: myDatasets, pending } = await useAsyncData(
-  `my-datasets:${page.value}`,
+  "my-datasets",
   async () => {
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    if (!user) throw new Error("User not logged in");
+
     const pagination = getPagination(page.value, pageSize);
 
     const { data, count } = await client
       .from("datasets")
-      .select("id, name, metadata, public, owner (name), size", {
+      .select("id, name, metadata, public, owner (name), size, created_at", {
         count: "exact",
       })
-      .eq("owner", user.value!.id)
+      .eq("owner", user.id)
       .order("created_at", { ascending: false })
       .range(pagination.from, pagination.to);
 

@@ -1,31 +1,118 @@
 export interface Metadata {
-  "@context": "http://www.w3.org/ns/csvw";
-  url: string;
-  "dc:title": string;
-  "dc:description": string;
-  tableSchema: {
-    columns: {
-      titles: string;
+  "@context": (string | { "@language": string })[];
+  "@type"?: "Table" | "TableGroup";
+  tables: [
+    {
+      "@type": "Table";
+      url: string;
       "dc:title": string;
       "dc:description": string;
-      datatype: string;
-    }[];
-  };
+      tableSchema: {
+        "@type": "Schema";
+        columns: {
+          name: string;
+          titles: string | string[];
+          "dc:title": string;
+          "dc:description": string;
+          datatype: {
+            base: string;
+            format?: string;
+          };
+          required?: boolean;
+          suppressOutput?: boolean;
+        }[];
+        aboutUrl?: string;
+        primaryKey?: string | string[];
+        foreignKeys?: {
+          columnReference: string | string[];
+          reference: {
+            resource: string;
+            columnReference: string | string[];
+          };
+        }[];
+      };
+      dialect: {
+        "@type"?: "Dialect";
+        delimiter: string;
+        encoding: string;
+        header: boolean;
+        headerRowCount: number;
+        trim: boolean;
+        skipRows?: number;
+        skipColumns?: number;
+        skipBlankRows?: boolean;
+        skipInitialSpace?: boolean;
+        lineTerminators?: string[];
+        quoteChar?: string;
+        doubleQuote?: boolean;
+        commentPrefix?: string;
+      };
+      notes?: Array<{
+        "@type": "Note";
+        type?: string;
+        body: string;
+      }>;
+    }
+  ];
 }
 
-export function toMetadata(metadata: any): Metadata {
-  return {
-    "@context": "http://www.w3.org/ns/csvw",
-    url: metadata.url as string,
-    "dc:title": metadata["dc:title"] as string,
-    "dc:description": metadata["dc:description"] as string,
-    tableSchema: {
-      columns: metadata.tableSchema.columns.map((column: any) => ({
-        titles: column.titles as string,
-        "dc:title": column["dc:title"] as string,
-        "dc:description": column["dc:description"] as string,
-        datatype: column.datatype as string,
-      })),
+// Default CSVW metadata structure
+const DEFAULT_METADATA: Metadata = {
+  "@context": ["http://www.w3.org/ns/csvw", { "@language": "en" }],
+  "@type": "TableGroup",
+  tables: [
+    {
+      "@type": "Table",
+      url: "",
+      "dc:title": "",
+      "dc:description": "",
+      tableSchema: {
+        "@type": "Schema",
+        columns: [],
+        aboutUrl: "",
+      },
+      dialect: {
+        "@type": "Dialect",
+        delimiter: ",",
+        encoding: "utf-8",
+        header: true,
+        headerRowCount: 1,
+        trim: false,
+        doubleQuote: true,
+        skipBlankRows: true,
+        lineTerminators: ["\r\n", "\n"],
+        quoteChar: '"',
+      },
     },
+  ],
+};
+
+/**
+ * Ensures metadata follows the CSVW structure by providing defaults for missing fields
+ * Only used when reading from database to ensure type safety
+ */
+export function toMetadata(metadata: any): Metadata {
+  if (!metadata?.tables?.[0]) {
+    return DEFAULT_METADATA;
+  }
+
+  // Since we're already saving in CSVW format, just ensure all required fields exist
+  return {
+    "@context": metadata["@context"] || DEFAULT_METADATA["@context"],
+    "@type": metadata["@type"] || DEFAULT_METADATA["@type"],
+    tables: [
+      {
+        ...DEFAULT_METADATA.tables[0],
+        ...metadata.tables[0],
+        tableSchema: {
+          ...DEFAULT_METADATA.tables[0].tableSchema,
+          ...metadata.tables[0].tableSchema,
+        },
+        dialect: {
+          ...DEFAULT_METADATA.tables[0].dialect,
+          ...metadata.tables[0].dialect,
+        },
+      },
+    ],
   };
 }
