@@ -1,29 +1,28 @@
-import { analysisCache } from "./analyze-dataset.post";
+import { analysisStore } from "./analyze-dataset.post";
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler((event) => {
   const query = getQuery(event);
   const analysisId = query.id as string;
 
   if (!analysisId) {
     throw createError({
       statusCode: 400,
-      message: "Analysis ID is required",
+      message: "Missing analysis ID",
     });
   }
 
-  const analysis = analysisCache.get(analysisId);
-
+  const analysis = analysisStore.get(analysisId);
   if (!analysis) {
     throw createError({
       statusCode: 404,
-      message: "Analysis not found",
+      message: "Analysis not found. It may have expired (TTL: 1 hour)",
     });
   }
 
   return {
     status: analysis.status,
+    progress: analysis.progress,
     result: analysis.result,
     error: analysis.error,
-    progress: analysis.progress || "Waiting for analysis to start...",
   };
 });

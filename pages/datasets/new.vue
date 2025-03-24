@@ -70,12 +70,20 @@
 
     <div
       v-if="stage === 2"
-      class="flex flex-col items-center justify-center max-w-3xl mx-auto h-96 bg-background border-2 border-dashed border-border rounded-lg"
+      class="flex flex-col items-center justify-center max-w-3xl mx-auto h-96 bg-background border-2 border-dashed border-border rounded-lg p-8"
     >
       <Loading className="text-primary w-16 h-16" />
-      <p class="text-muted-foreground mt-4">
-        {{ analysisProgress || "Analyzing your dataset..." }}
-      </p>
+      <div class="mt-6 w-full max-w-md space-y-4">
+        <div class="w-full bg-muted rounded-full h-2 overflow-hidden">
+          <div
+            class="bg-primary h-full transition-all duration-300"
+            :style="{ width: `${analysisProgress.percent || 0}%` }"
+          ></div>
+        </div>
+        <p class="text-muted-foreground text-center">
+          {{ analysisProgress.status || "Analyzing your dataset..." }}
+        </p>
+      </div>
     </div>
 
     <form
@@ -345,6 +353,23 @@ import type { ColumnAnalysis } from "~/utils/decisionTree";
 import { detectDataTypes } from "~/utils/decisionTree";
 import { analyzeDataset } from "~/utils/openai";
 
+interface ColumnMetadata {
+  name: string;
+  description: string;
+  dataType: string;
+  category: string;
+  confidence: number;
+  reasoning: {
+    mainReason: string;
+    details: string[];
+  };
+}
+
+interface AnalysisProgress {
+  status: string;
+  percent: number;
+}
+
 definePageMeta({
   layout: "dashboard",
 });
@@ -369,7 +394,11 @@ const categories = ref<Array<string>>([]);
 
 const analysisResults = ref<ColumnAnalysis[]>([]);
 const previewIndex = ref<number | null>(null);
-const analysisProgress = ref("");
+
+const analysisProgress = ref<AnalysisProgress>({
+  status: "Analyzing your dataset...",
+  percent: 0,
+});
 
 const previews = ref<Map<number, HTMLElement>>(new Map());
 
@@ -416,34 +445,18 @@ const processFiles = async (files: FileList | undefined | null) => {
 
   if (useOpenAI.value) {
     try {
-      analysisProgress.value = "Starting analysis...";
+      analysisProgress.value = {
+        status: "Starting analysis...",
+        percent: 0,
+      };
 
       // Generate metadata and verify columns using ChatGPT
       const analysis = await analyzeDataset(
         datasetFile.name,
         parsedData,
         analysisResults.value,
-        (chunk, status) => {
-          // If we received a status update, show it
-          if (status) {
-            analysisProgress.value = status;
-            return;
-          }
-
-          // Otherwise try to parse the chunk as JSON
-          try {
-            const partial = JSON.parse(chunk);
-            if (partial.name) {
-              analysisProgress.value = `Dataset name identified: ${partial.name}`;
-            } else if (partial.description) {
-              analysisProgress.value = "Dataset description generated...";
-            } else if (partial.columns?.length) {
-              analysisProgress.value = `Analyzing columns (${partial.columns.length} processed)...`;
-            }
-          } catch {
-            // If we can't parse the JSON, just update the progress
-            analysisProgress.value = "Processing dataset analysis...";
-          }
+        (progress: { status: string; percent: number }) => {
+          analysisProgress.value = progress;
         }
       );
 
@@ -452,10 +465,16 @@ const processFiles = async (files: FileList | undefined | null) => {
       datasetDescription.value = analysis.description;
 
       // Update column information and analysis results
-      names.value = analysis.columns.map((col) => col.name);
-      descriptions.value = analysis.columns.map((col) => col.description);
-      dataTypes.value = analysis.columns.map((col) => col.dataType);
-      categories.value = analysis.columns.map((col) => col.category);
+      names.value = analysis.columns.map((col: ColumnMetadata) => col.name);
+      descriptions.value = analysis.columns.map(
+        (col: ColumnMetadata) => col.description
+      );
+      dataTypes.value = analysis.columns.map(
+        (col: ColumnMetadata) => col.dataType
+      );
+      categories.value = analysis.columns.map(
+        (col: ColumnMetadata) => col.category
+      );
 
       // Update analysis results with AI verification
       analysisResults.value = analysisResults.value.map((result, index) => ({
@@ -466,12 +485,18 @@ const processFiles = async (files: FileList | undefined | null) => {
         reasoning: analysis.columns[index].reasoning,
       }));
 
-      analysisProgress.value = "Analysis complete!";
+      analysisProgress.value = {
+        status: "Analysis complete!",
+        percent: 100,
+      };
     } catch (error) {
       console.error("Error during dataset analysis:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      analysisProgress.value = `Analysis failed: ${errorMessage}. Using basic analysis...`;
+      analysisProgress.value = {
+        status: `Analysis failed: ${errorMessage}. Using basic analysis...`,
+        percent: 0,
+      };
       useDefaultAnalysis();
     }
   } else {
@@ -489,40 +514,36 @@ const useDefaultAnalysis = () => {
     (result: ColumnAnalysis) => result.header
   );
   descriptions.value = columns.value.map(() => "");
-  dataTypes.value = analysisResults.value.map(
-    (result: ColumnAnalysis, index: number) => {
-      const columnName = result.header.toLowerCase();
-      const isIdColumn = /\bid\b/.test(columnName);
+  dataTypes.value = analysisResults.value.map((result: ColumnAnalysis) => {
+    const columnName = result.header.toLowerCase();
+    const isIdColumn = /\bid\b/.test(columnName);
 
-      if (isIdColumn) {
-        return result.dataType === "number" ? "number" : "string";
-      }
-
-      switch (result.dataType) {
-        case "number":
-          return "number";
-        case "date":
-          return "date";
-        case "boolean":
-          return "boolean";
-        default:
-          return "string";
-      }
+    if (isIdColumn) {
+      return result.dataType === "number" ? "number" : "string";
     }
-  );
 
-  categories.value = analysisResults.value.map(
-    (result: ColumnAnalysis, index: number) => {
-      const columnName = result.header.toLowerCase();
-      const isIdColumn = /\bid\b/.test(columnName);
-
-      if (isIdColumn) {
-        return "identifier";
-      }
-
-      return result.dataFormat === "unknown" ? "" : result.dataFormat;
+    switch (result.dataType) {
+      case "number":
+        return "number";
+      case "date":
+        return "date";
+      case "boolean":
+        return "boolean";
+      default:
+        return "string";
     }
-  );
+  });
+
+  categories.value = analysisResults.value.map((result: ColumnAnalysis) => {
+    const columnName = result.header.toLowerCase();
+    const isIdColumn = /\bid\b/.test(columnName);
+
+    if (isIdColumn) {
+      return "identifier";
+    }
+
+    return result.dataFormat === "unknown" ? "" : result.dataFormat;
+  });
 };
 
 const previousStage = () => stage.value--;

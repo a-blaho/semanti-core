@@ -19,9 +19,9 @@ interface DatasetMetadata {
 export async function analyzeDataset(
   fileName: string,
   sampleData: string[][],
-  columnAnalysis: ColumnAnalysis[],
-  onProgress?: (message: string) => void
-): Promise<DatasetMetadata> {
+  columnAnalysis: any[],
+  onProgress?: (progress: { status: string; percent: number }) => void
+): Promise<any> {
   try {
     // Start the analysis
     const response = await fetch("/api/analyze-dataset", {
@@ -37,69 +37,71 @@ export async function analyzeDataset(
     });
 
     if (!response.ok) {
-      throw new Error("Failed to start analysis");
+      const error = await response.json();
+      throw new Error(error.message || "Failed to start analysis");
     }
 
     const { analysisId } = await response.json();
-    if (!analysisId) {
-      throw new Error("No analysis ID returned");
-    }
 
-    // Poll for results with extended duration
-    // Server has 3 attempts × (60s timeout + 5s delay) + 5s buffer = 200s total
+    // Poll for results
+    const maxAttempts = 60; // 2 minutes maximum (2s interval)
     let attempts = 0;
-    const pollInterval = 10000; // 10 seconds
-    const maxAttempts = 20; // 200 seconds total (10s interval × 20 attempts)
-    let lastProgress = "";
 
     while (attempts < maxAttempts) {
       const statusResponse = await fetch(
         `/api/analyze-dataset-status?id=${analysisId}`
       );
+
       if (!statusResponse.ok) {
-        throw new Error("Failed to check analysis status");
+        const error = await statusResponse.json();
+        throw new Error(error.message || "Failed to check analysis status");
       }
 
       const status = await statusResponse.json();
 
-      // Report progress if callback is provided and progress has changed
-      if (onProgress && status.progress && status.progress !== lastProgress) {
-        onProgress(status.progress);
-        lastProgress = status.progress;
+      // Report progress
+      if (onProgress) {
+        onProgress({
+          status: getProgressMessage(status),
+          percent: status.progress,
+        });
       }
 
-      if (status.status === "completed" && status.result) {
+      // Check if complete
+      if (status.status === "complete") {
         return status.result;
       }
 
+      // Check for errors
       if (status.status === "error") {
         throw new Error(status.error || "Analysis failed");
       }
 
       // Wait before next poll
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       attempts++;
-
-      // Update progress with remaining time
-      if (onProgress && attempts % 3 === 0) {
-        // Show remaining time every 30 seconds (3 × 10s)
-        const remainingSeconds = Math.floor(
-          (maxAttempts - attempts) * (pollInterval / 1000)
-        );
-        onProgress(
-          `Still processing... Will timeout in ${remainingSeconds} seconds`
-        );
-      }
     }
 
-    throw new Error(
-      "Analysis timed out after 200 seconds. The dataset might be too large to process."
-    );
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      throw new Error(`Analysis failed: ${error.message}`);
-    }
-    throw new Error("Analysis failed with an unknown error");
+    throw new Error("Analysis timed out after 2 minutes");
+  } catch (error) {
+    console.error("Dataset analysis failed:", error);
+    throw error;
+  }
+}
+
+function getProgressMessage(status: {
+  status: string;
+  progress: number;
+}): string {
+  switch (status.status) {
+    case "analyzing":
+      return `Analyzing dataset (${status.progress}% complete)...`;
+    case "complete":
+      return "Analysis complete!";
+    case "error":
+      return "Analysis failed";
+    default:
+      return "Waiting for analysis to start...";
   }
 }
 
