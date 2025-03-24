@@ -73,7 +73,9 @@
       class="flex flex-col items-center justify-center max-w-3xl mx-auto h-96 bg-background border-2 border-dashed border-border rounded-lg"
     >
       <Loading className="text-primary w-16 h-16" />
-      <p class="text-muted-foreground mt-4">Analyzing your dataset...</p>
+      <p class="text-muted-foreground mt-4">
+        {{ analysisProgress || "Analyzing your dataset..." }}
+      </p>
     </div>
 
     <form
@@ -367,6 +369,7 @@ const categories = ref<Array<string>>([]);
 
 const analysisResults = ref<ColumnAnalysis[]>([]);
 const previewIndex = ref<number | null>(null);
+const analysisProgress = ref("");
 
 const previews = ref<Map<number, HTMLElement>>(new Map());
 
@@ -413,11 +416,35 @@ const processFiles = async (files: FileList | undefined | null) => {
 
   if (useOpenAI.value) {
     try {
+      analysisProgress.value = "Starting analysis...";
+
       // Generate metadata and verify columns using ChatGPT
       const analysis = await analyzeDataset(
         datasetFile.name,
         parsedData,
-        analysisResults.value
+        analysisResults.value,
+        (chunk, status) => {
+          // If we received a status update, show it
+          if (status) {
+            analysisProgress.value = status;
+            return;
+          }
+
+          // Otherwise try to parse the chunk as JSON
+          try {
+            const partial = JSON.parse(chunk);
+            if (partial.name) {
+              analysisProgress.value = `Dataset name identified: ${partial.name}`;
+            } else if (partial.description) {
+              analysisProgress.value = "Dataset description generated...";
+            } else if (partial.columns?.length) {
+              analysisProgress.value = `Analyzing columns (${partial.columns.length} processed)...`;
+            }
+          } catch {
+            // If we can't parse the JSON, just update the progress
+            analysisProgress.value = "Processing dataset analysis...";
+          }
+        }
       );
 
       // Update form fields with generated metadata
@@ -438,15 +465,21 @@ const processFiles = async (files: FileList | undefined | null) => {
         confidence: analysis.columns[index].confidence,
         reasoning: analysis.columns[index].reasoning,
       }));
+
+      analysisProgress.value = "Analysis complete!";
     } catch (error) {
       console.error("Error during dataset analysis:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      analysisProgress.value = `Analysis failed: ${errorMessage}. Using basic analysis...`;
       useDefaultAnalysis();
     }
   } else {
     useDefaultAnalysis();
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Add a small delay before moving to the next stage
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   nextStage();
 };
 
