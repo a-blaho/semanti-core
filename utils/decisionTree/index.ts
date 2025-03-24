@@ -77,7 +77,7 @@ const languageSet = new Set(languages.map((item) => item.toLowerCase()));
 const regexPatterns: RegexPatterns = {
   email: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
 
-  phone: /^(?:\+?\d{1,4}[-.\s]?)?(?:\(?\d{1,}\)?[-.\s]?){1,}(?:\d[-.\s]?){4,}$/,
+  phone: /^(?:\+?\d{1,4}[-.\s]?)?(?:\(?\d{1,4}\)?[-.\s]?)*(?:\d[-.\s]?){4,}$/,
 
   dateISO: /^\d{4}-\d{2}-\d{2}$/,
   dateUS: /^\d{1,2}\/\d{1,2}\/\d{4}$/,
