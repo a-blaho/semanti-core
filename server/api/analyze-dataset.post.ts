@@ -1,5 +1,4 @@
-import OpenAI from "openai";
-import type { ChatCompletion } from "openai/resources";
+import { OpenAI } from "openai";
 import type { ColumnAnalysis } from "~/utils/decisionTree";
 
 interface DatasetMetadata {
@@ -46,7 +45,8 @@ export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig();
   const openai = new OpenAI({
     apiKey: runtimeConfig.openaiApiKey,
-    timeout: 30000, // 30 second timeout for initial connection
+    maxRetries: 2, // Reduce retries to avoid long waits
+    timeout: 90000, // 90 second timeout for the entire request
   });
 
   const body = await readBody(event);
@@ -76,6 +76,13 @@ export default defineEventHandler(async (event) => {
         ...analysisCache.get(analysisId)!,
         progress: "Preparing data for analysis...",
       });
+
+      // Add size check to prevent timeouts on large datasets
+      if (sampleData.length > 1000 || columnAnalysis.length > 50) {
+        throw new Error(
+          "Dataset is too large. Please reduce the size to under 1000 rows and 50 columns."
+        );
+      }
 
       const columnInfo = columnAnalysis.map(
         (col: ColumnAnalysis, idx: number) => ({
@@ -183,97 +190,82 @@ Format your response as JSON matching this TypeScript type:
         progress: "Sending request to OpenAI...",
       });
 
-      // Maximum number of retries for OpenAI API
-      const maxRetries = 2;
-      let retryCount = 0;
-      let lastError: Error | null = null;
+      try {
+        // Create a timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error("Request timed out after 90 seconds"));
+          }, 90000);
+        });
 
-      while (retryCount <= maxRetries) {
-        try {
-          // Create a timeout promise - 90 seconds total, giving more time for retries
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new Error("Request timed out after 90 seconds"));
-            }, 90000);
-          });
+        // Make the OpenAI API call
+        const completionPromise = openai.chat.completions.create({
+          model: "gpt-4-turbo-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.3,
+        });
 
-          // Create the OpenAI API call promise with a 60 second timeout
-          const openai = new OpenAI({
-            apiKey: runtimeConfig.openaiApiKey,
-            timeout: 60000, // 60 second timeout for initial connection
-          });
+        // Race between completion and timeout
+        const completion = (await Promise.race([
+          completionPromise,
+          timeoutPromise,
+        ])) as OpenAI.Chat.Completions.ChatCompletion;
 
-          const openaiPromise = openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.3,
-          });
-
-          // Update progress with retry information if applicable
-          if (retryCount > 0) {
-            analysisCache.set(analysisId, {
-              ...analysisCache.get(analysisId)!,
-              progress: `Retry attempt ${retryCount} of ${maxRetries}...`,
-            });
-          }
-
-          // Race between the API call and timeout
-          const response = (await Promise.race([
-            openaiPromise,
-            timeoutPromise,
-          ])) as ChatCompletion;
-
-          if (!response?.choices?.[0]?.message?.content) {
-            throw new Error("OpenAI API returned empty response");
-          }
-
-          // Update progress
-          analysisCache.set(analysisId, {
-            ...analysisCache.get(analysisId)!,
-            progress: "Processing response...",
-          });
-
-          const metadata = JSON.parse(
-            response.choices[0].message.content
-          ) as DatasetMetadata;
-
-          // Store the result in cache
-          analysisCache.set(analysisId, {
-            status: "completed",
-            result: metadata,
-            timestamp: Date.now(),
-            progress: "Analysis complete",
-          });
-
-          // Success - exit the retry loop
-          return;
-        } catch (error) {
-          lastError =
-            error instanceof Error ? error : new Error("Unknown error");
-          console.error(`Attempt ${retryCount + 1} failed:`, lastError);
-
-          // If we've exhausted all retries, throw the last error
-          if (retryCount === maxRetries) {
-            throw lastError;
-          }
-
-          // Update progress with retry information
-          analysisCache.set(analysisId, {
-            ...analysisCache.get(analysisId)!,
-            progress: `Attempt failed. Retrying in 5 seconds... (${retryCount + 1}/${maxRetries})`,
-          });
-
-          // Wait 5 seconds before retrying
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-          retryCount++;
+        // Parse the response
+        if (!completion?.choices?.[0]?.message?.content) {
+          throw new Error("OpenAI API returned empty response");
         }
+
+        const metadata = JSON.parse(
+          completion.choices[0].message.content
+        ) as DatasetMetadata;
+
+        // Store the result in cache
+        analysisCache.set(analysisId, {
+          status: "completed",
+          result: metadata,
+          timestamp: Date.now(),
+          progress: "Analysis complete",
+        });
+      } catch (error) {
+        console.error("Error during OpenAI API call:", {
+          error: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Determine the specific error type and provide a helpful message
+        let errorMessage = "Analysis failed: ";
+        if (error instanceof Error) {
+          const errorDetails = error.message.toLowerCase();
+          if (errorDetails.includes("timeout")) {
+            errorMessage +=
+              "The request took too long. Try reducing the dataset size or splitting it into smaller chunks.";
+          } else if (errorDetails.includes("api key")) {
+            errorMessage +=
+              "There was an issue with the API configuration. Please contact support.";
+          } else if (errorDetails.includes("rate limit")) {
+            errorMessage +=
+              "Too many requests. Please wait a few minutes and try again.";
+          } else {
+            errorMessage += `${error.message}. If this persists, try with a smaller dataset.`;
+          }
+        } else {
+          errorMessage += "An unexpected error occurred. Please try again.";
+        }
+
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      console.error("Error in dataset analysis:", error);
+      console.error("Final error in dataset analysis:", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        timestamp: new Date().toISOString(),
+      });
 
       // Store the error in cache with more detailed message
       const errorMessage =
@@ -281,11 +273,9 @@ Format your response as JSON matching this TypeScript type:
 
       analysisCache.set(analysisId, {
         status: "error",
-        error: errorMessage.includes("timed out")
-          ? "Analysis timed out. Please try again with a smaller dataset or fewer columns."
-          : `Analysis failed: ${errorMessage}`,
+        error: errorMessage,
         timestamp: Date.now(),
-        progress: "Analysis failed",
+        progress: "Analysis failed - check server logs for details",
       });
     }
   }
