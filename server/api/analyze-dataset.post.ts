@@ -204,9 +204,47 @@ Respond with a JSON object matching this type:
 
       // Generate dataset-level metadata
       const dataTypes = new Set(analyzedColumns.map((col) => col.dataType));
+
+      // Generate name and description using OpenAI
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4-turbo-preview",
+        messages: [
+          {
+            role: "system",
+            content: `You are a data scientist naming and describing a dataset.
+Generate a concise name (max 50 chars) and description (max 200 chars) based on the column information.
+The name should be clear and professional, avoiding technical jargon.
+The description should highlight the key aspects and potential use cases of the dataset.
+
+Respond with a JSON object:
+{
+  "name": string,    // Dataset name (don't include the word 'Dataset')
+  "description": string  // Brief description
+}`,
+          },
+          {
+            role: "user",
+            content: `Analyze these columns from "${fileName}":
+
+${analyzedColumns.map((col) => `- ${col.name}: ${col.description} (${col.dataType}, ${col.category})`).join("\n")}
+
+Total rows: ${sampleData.length - 1}
+Data types: ${Array.from(dataTypes).join(", ")}`,
+          },
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.7,
+      });
+
+      if (!completion?.choices?.[0]?.message?.content) {
+        throw new Error("Empty response from OpenAI");
+      }
+
+      const nameDesc = JSON.parse(completion.choices[0].message.content);
+
       const metadata: DatasetMetadata = {
-        name: `${fileName.split(".")[0]} Dataset`,
-        description: `Dataset with ${totalColumns} columns and ${sampleData.length - 1} rows, containing ${Array.from(dataTypes).join(", ")} data`,
+        name: `${nameDesc.name} Dataset`,
+        description: nameDesc.description,
         columns: analyzedColumns,
       };
 
@@ -227,5 +265,18 @@ Respond with a JSON object matching this type:
         lastUpdated: Date.now(),
       });
     }
+  }
+
+  function formatDatasetName(fileName: string): string {
+    // Remove file extension and split by underscores or hyphens
+    const baseName = fileName.split(".")[0].replace(/[_-]/g, " ");
+
+    // Capitalize each word
+    const formattedName = baseName
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    return `${formattedName} Dataset`;
   }
 });
