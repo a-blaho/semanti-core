@@ -20,7 +20,6 @@ Useful links for development.
 - [Vercel dashboard](https://vercel.com/a-blaho/semanti-core)
 
 ### Docs
-- [Headless UI docs](https://headlessui.com)
 - [Nuxt3 docs](https://nuxt.com/docs)
 - [Nuxt Supabase docs](https://supabase.nuxtjs.org)
 - [Supabase docs](https://supabase.com/docs)
