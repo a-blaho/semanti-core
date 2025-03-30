@@ -1,5 +1,5 @@
 export interface Metadata {
-  "@context": (string | { "@language": string })[];
+  "@context": (string | { "@language": string; ai?: string; dt?: string })[];
   "@type"?: "Table" | "TableGroup";
   tables: [
     {
@@ -20,6 +20,8 @@ export interface Metadata {
           };
           required?: boolean;
           suppressOutput?: boolean;
+          "ai:reasoning"?: string;
+          "dt:reasoning"?: string;
         }[];
         aboutUrl?: string;
         primaryKey?: string | string[];
@@ -52,13 +54,20 @@ export interface Metadata {
         type?: string;
         body: string;
       }>;
-    }
+    },
   ];
 }
 
 // Default CSVW metadata structure
 const DEFAULT_METADATA: Metadata = {
-  "@context": ["http://www.w3.org/ns/csvw", { "@language": "en" }],
+  "@context": [
+    "http://www.w3.org/ns/csvw",
+    {
+      "@language": "en",
+      ai: "/api/ns/ai.jsonld#",
+      dt: "/api/ns/decision-tree.jsonld#",
+    },
+  ],
   "@type": "TableGroup",
   tables: [
     {
@@ -107,6 +116,13 @@ export function toMetadata(metadata: any): Metadata {
         tableSchema: {
           ...DEFAULT_METADATA.tables[0].tableSchema,
           ...metadata.tables[0].tableSchema,
+          columns: metadata.tables[0].tableSchema.columns.map(
+            (column: any) => ({
+              ...column,
+              "ai:reasoning": column["ai:reasoning"],
+              "dt:reasoning": column["dt:reasoning"],
+            })
+          ),
         },
         dialect: {
           ...DEFAULT_METADATA.tables[0].dialect,

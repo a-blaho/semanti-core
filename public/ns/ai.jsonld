@@ -1,0 +1,24 @@
+{
+  "@context": {
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "ai": "http://semanti.ai/ns/ai#"
+  },
+  "@graph": [
+    {
+      "@id": "ai:",
+      "@type": "rdfs:Class",
+      "rdfs:label": "AI Namespace",
+      "rdfs:comment": "Namespace for AI-related metadata in CSV on the Web"
+    },
+    {
+      "@id": "ai:reasoning",
+      "@type": "rdf:Property",
+      "rdfs:label": "AI Reasoning",
+      "rdfs:comment": "Contains the reasoning and analysis provided by AI systems",
+      "rdfs:domain": "ai:",
+      "rdfs:range": "xsd:string"
+    }
+  ]
+}

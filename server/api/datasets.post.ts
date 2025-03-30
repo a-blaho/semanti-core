@@ -49,7 +49,14 @@ export default defineEventHandler(async (event) => {
     public: metadata.public,
     size: metadata.size,
     metadata: {
-      "@context": ["http://www.w3.org/ns/csvw", { "@language": "en" }],
+      "@context": [
+        "http://www.w3.org/ns/csvw",
+        {
+          "@language": "en",
+          ai: "/api/ns/ai.jsonld#",
+          dt: "/api/ns/decision-tree.jsonld#",
+        },
+      ],
       "@type": "TableGroup",
       tables: [
         {
@@ -70,6 +77,8 @@ export default defineEventHandler(async (event) => {
               },
               required: true,
               suppressOutput: false,
+              "ai:reasoning": column["ai:reasoning"],
+              "dt:reasoning": column["dt:reasoning"],
             })),
             aboutUrl:
               "#{" +

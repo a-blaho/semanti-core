@@ -233,8 +233,12 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
       values.filter((v) => !v).length / values.length,
       textStats,
       values.slice(0, 5),
-      "Country names detected",
-      [`Match ratio: ${(countryMatchRatio * 100).toFixed(1)}%`]
+      "Country names pattern detected",
+      [
+        `Match ratio: ${(countryMatchRatio * 100).toFixed(1)}%`,
+        "Values match known country names",
+        "High confidence in country classification",
+      ]
     );
   }
 
@@ -249,8 +253,12 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
       values.filter((v) => !v).length / values.length,
       textStats,
       values.slice(0, 5),
-      "Language names detected",
-      [`Match ratio: ${(languageMatchRatio * 100).toFixed(1)}%`]
+      "Language names pattern detected",
+      [
+        `Match ratio: ${(languageMatchRatio * 100).toFixed(1)}%`,
+        "Values match known language names",
+        "High confidence in language classification",
+      ]
     );
   }
 
@@ -265,8 +273,12 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
       values.filter((v) => !v).length / values.length,
       textStats,
       values.slice(0, 5),
-      `${patternMatch.format.charAt(0).toUpperCase() + patternMatch.format.slice(1)} format detected`,
-      [`Match ratio: ${(patternMatch.matchRatio * 100).toFixed(1)}%`]
+      `${patternMatch.format.charAt(0).toUpperCase() + patternMatch.format.slice(1)} pattern detected`,
+      [
+        `Match ratio: ${(patternMatch.matchRatio * 100).toFixed(1)}%`,
+        `Values follow ${patternMatch.format} format pattern`,
+        "High confidence in pattern classification",
+      ]
     );
   }
 
@@ -282,17 +294,18 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
       values.filter((v) => !v).length / values.length,
       textStats,
       values.slice(0, 5),
-      "Categorical data detected",
+      "Categorical data pattern detected",
       [
         `Unique values: ${uniqueValues.size}`,
         `Total values: ${values.length}`,
         `Unique ratio: ${(uniqueRatio * 100).toFixed(1)}%`,
+        "Low cardinality indicates categorical nature",
       ]
     );
   }
 
   let format = "text";
-  let mainReason = "General text detected";
+  let mainReason = "General text pattern detected";
   const details = [
     `Uniqueness: ${(textStats.uniqueRatio * 100).toFixed(1)}%`,
     `Average length: ${Math.round(textStats.avgLength)} characters`,
@@ -303,13 +316,16 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
   if (textStats.uniqueRatio > 0.9) {
     if (textStats.avgLength > 100) {
       format = "description";
-      mainReason = "Long descriptive text detected";
+      mainReason = "Long-form descriptive text pattern detected";
+      details.push("High average length indicates descriptive content");
     } else if (textStats.avgLength > 30) {
       format = "title";
-      mainReason = "Title-like text detected";
+      mainReason = "Title-like text pattern detected";
+      details.push("Moderate length suggests title format");
     } else if (values.every((v) => /^[A-Za-z0-9_-]+$/i.test(v))) {
       format = "identifier";
       mainReason = "Identifier pattern detected";
+      details.push("Consistent alphanumeric format with underscores/dashes");
     }
   }
 
@@ -335,12 +351,16 @@ function analyzeColumnName(
       header,
       "string",
       "identifier",
-      1.0,
+      calculateConfidence(sampleValues, "string", "identifier", null),
       0,
       null,
       sampleValues.slice(0, 5),
-      "ID column detected from header name",
-      ['Column name contains "ID"']
+      "Identifier column pattern detected from header",
+      [
+        'Column name contains "ID"',
+        "Pattern-based classification",
+        "Common pattern for primary/foreign keys",
+      ]
     );
   }
 
@@ -349,12 +369,16 @@ function analyzeColumnName(
       header,
       "number",
       "latitude",
-      1.0,
+      calculateConfidence(sampleValues, "number", "decimal", null),
       0,
       null,
       sampleValues.slice(0, 5),
-      "Latitude column detected from header name",
-      ["Column name contains latitude-related terms"]
+      "Latitude coordinate column pattern detected from header",
+      [
+        "Column name contains latitude-related terms",
+        "Pattern-based classification",
+        "Common pattern for geographic coordinates",
+      ]
     );
   }
 
@@ -363,12 +387,16 @@ function analyzeColumnName(
       header,
       "number",
       "longitude",
-      1.0,
+      calculateConfidence(sampleValues, "number", "decimal", null),
       0,
       null,
       sampleValues.slice(0, 5),
-      "Longitude column detected from header name",
-      ["Column name contains longitude-related terms"]
+      "Longitude coordinate column pattern detected from header",
+      [
+        "Column name contains longitude-related terms",
+        "Pattern-based classification",
+        "Common pattern for geographic coordinates",
+      ]
     );
   }
 
@@ -377,12 +405,16 @@ function analyzeColumnName(
       header,
       "number",
       "year",
-      0.8,
+      calculateConfidence(sampleValues, "number", "year", null),
       0,
       null,
       sampleValues.slice(0, 5),
-      "Year column detected from header name",
-      ["Column name contains year-related terms"]
+      "Year column pattern detected from header",
+      [
+        "Column name contains year-related terms",
+        "Pattern-based classification",
+        "Common pattern for temporal data",
+      ]
     );
   }
 
@@ -391,17 +423,21 @@ function analyzeColumnName(
       header,
       "number",
       "age",
-      0.8,
+      calculateConfidence(sampleValues, "number", "age", null),
       0,
       null,
       sampleValues.slice(0, 5),
-      "Age column detected from header name",
-      ["Column name contains age-related terms"]
+      "Age column pattern detected from header",
+      [
+        "Column name contains age-related terms",
+        "Pattern-based classification",
+        "Common pattern for demographic data",
+      ]
     );
   }
 
   if (
-    /\b(price|cost|amount|fee|payment|salary|wage|income|revenue|budget)\b/i.test(
+    /\b(price|cost|balance|fee|payment|salary|wage|income|revenue|budget)\b/i.test(
       header
     )
   ) {
@@ -409,12 +445,16 @@ function analyzeColumnName(
       header,
       "number",
       "currency",
-      0.8,
+      calculateConfidence(sampleValues, "number", "currency", null),
       0,
       null,
       sampleValues.slice(0, 5),
-      "Currency column detected from header name",
-      ["Column name contains financial terms"]
+      "Currency column pattern detected from header",
+      [
+        "Column name contains financial terms",
+        "Pattern-based classification",
+        "Common pattern for monetary values",
+      ]
     );
   }
 
@@ -442,9 +482,10 @@ export function createDecisionTree(): DecisionTreeNode {
             data.missingValueRatio,
             null,
             data.sampleValues,
-            "Too many missing values",
+            "High proportion of missing values detected",
             [
               `Missing value ratio: ${(data.missingValueRatio * 100).toFixed(1)}%`,
+              "Data quality is insufficient for reliable type inference",
             ]
           ),
       },
@@ -456,12 +497,15 @@ export function createDecisionTree(): DecisionTreeNode {
               data.header,
               "boolean",
               "binary",
-              1.0,
+              calculateConfidence(data.values, "boolean", "binary", null),
               data.missingValueRatio,
               null,
               data.sampleValues,
-              "Binary values detected",
-              ["Values are binary (true/false, yes/no, etc.)"]
+              "Binary categorical values detected",
+              [
+                "Values are strictly binary (true/false, yes/no, 0/1, y/n)",
+                "Pattern-based classification",
+              ]
             ),
         },
         falseBranch: {
@@ -528,7 +572,11 @@ export function analyzeColumn(data: ColumnData): ColumnAnalysis {
     data.missingValueRatio,
     null,
     data.sampleValues,
-    "Unable to determine data type",
-    ["No clear pattern detected in the data"]
+    "Data pattern analysis inconclusive",
+    [
+      "No clear pattern detected in the data",
+      "Values do not match any known data type patterns",
+      "Insufficient information for type inference",
+    ]
   );
 }

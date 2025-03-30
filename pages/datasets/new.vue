@@ -612,6 +612,16 @@ const uploadDataset = async () => {
       description: descriptions.value[index],
       datatype: dataTypes.value[index],
       category: categories.value[index],
+      "ai:reasoning": useOpenAI.value
+        ? [
+            analysisResults.value[index].reasoning.mainReason.split("\n")[1],
+            ...analysisResults.value[index].reasoning.details.slice(-2),
+          ].join("\n")
+        : undefined,
+      "dt:reasoning": [
+        analysisResults.value[index].reasoning.mainReason.split("\n")[0],
+        ...analysisResults.value[index].reasoning.details.slice(0, -2),
+      ].join("\n"),
     })),
   };
 

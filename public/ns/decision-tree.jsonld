@@ -1,0 +1,24 @@
+{
+  "@context": {
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "dt": "http://semanti.ai/ns/decision-tree#"
+  },
+  "@graph": [
+    {
+      "@id": "dt:",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Decision Tree Namespace",
+      "rdfs:comment": "Namespace for decision tree related metadata in CSV on the Web"
+    },
+    {
+      "@id": "dt:reasoning",
+      "@type": "rdf:Property",
+      "rdfs:label": "Decision Tree Reasoning",
+      "rdfs:comment": "Contains the reasoning and analysis from decision tree processes",
+      "rdfs:domain": "dt:",
+      "rdfs:range": "xsd:string"
+    }
+  ]
+}
