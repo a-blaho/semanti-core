@@ -261,11 +261,36 @@
         </TabsContent>
       </Tabs>
     </div>
+    <Dialog v-model:open="showDeleteDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Dataset</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this dataset? This action cannot be
+            undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" @click="showDeleteDialog = false"
+            >Cancel</Button
+          >
+          <Button variant="destructive" @click="handleDelete">Delete</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Switch } from "~/components/ui/switch";
 import {
   Table,
@@ -305,6 +330,7 @@ const metadataError = ref("");
 const hasMetadataChanges = ref(false);
 const isEditing = ref(false);
 const isPublic = ref(false);
+const showDeleteDialog = ref(false);
 
 const copyToClipboard = async () => {
   try {
@@ -357,14 +383,10 @@ const saveMetadata = async () => {
 };
 
 const confirmDelete = async () => {
-  if (
-    !window.confirm(
-      "Are you sure you want to delete this dataset? This action cannot be undone."
-    )
-  ) {
-    return;
-  }
+  showDeleteDialog.value = true;
+};
 
+const handleDelete = async () => {
   try {
     const filePath = `${datasetId.value}/${datasetId.value}.csv`;
 
@@ -384,6 +406,8 @@ const confirmDelete = async () => {
   } catch (error) {
     console.error("Error deleting dataset:", error);
     alert("Failed to delete dataset. Please try again.");
+  } finally {
+    showDeleteDialog.value = false;
   }
 };
 
