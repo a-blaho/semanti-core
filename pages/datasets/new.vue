@@ -157,7 +157,7 @@
               class="text-sm truncate text-foreground"
               :for="column + '-' + index"
             >
-              {{ names[index] }}
+              {{ columns[index] }}
             </label>
             <Button
               type="button"
@@ -267,13 +267,13 @@
 
           <div>
             <h3 class="font-medium text-foreground mb-3">Sample Values</h3>
-            <div class="bg-muted rounded-lg p-4">
+            <div class="bg-muted rounded-lg p-4 max-h-[200px] overflow-y-auto">
               <ul class="space-y-2">
                 <li
                   v-for="value in previewIndex !== null
                     ? analysisResults[previewIndex].sampleValues
                     : []"
-                  class="text-sm text-muted-foreground font-mono truncate"
+                  class="text-sm text-muted-foreground font-mono whitespace-pre-wrap break-all"
                 >
                   {{ value }}
                 </li>
