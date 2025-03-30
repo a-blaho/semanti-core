@@ -1,17 +1,23 @@
 <template>
   <div
-    v-if="dataset"
+    v-if="dataset || isLoading"
     class="w-full py-8 px-16 grid grid-rows-[4rem_1fr] h-screen bg-background"
   >
     <div class="flex justify-between items-end w-full pb-2">
       <div>
-        <p>{{ dataset.owner.name }}</p>
-        <h1 class="text-2xl font-bold">
-          {{ dataset.metadata.tables[0]["dc:title"] }}
-        </h1>
+        <div
+          v-if="isLoading"
+          class="h-4 w-32 bg-muted rounded animate-pulse mb-2"
+        ></div>
+        <div v-else>
+          <p>{{ dataset?.owner.name }}</p>
+          <h1 class="text-2xl font-bold">
+            {{ dataset?.metadata.tables[0]["dc:title"] }}
+          </h1>
+        </div>
       </div>
-      <div>
-        <DatasetStar :dataset-id="dataset.id" />
+      <div v-if="!isLoading">
+        <DatasetStar :dataset-id="dataset?.id" />
       </div>
     </div>
     <div class="overflow-auto">
@@ -42,222 +48,337 @@
           >
         </TabsList>
         <TabsContent value="general" class="pt-4 space-y-4">
-          <div class="border rounded-lg p-6">
-            <h2 class="text-xl font-bold mb-4">Description</h2>
-            <p class="text-lg text-muted-foreground">
-              {{ dataset.metadata.tables[0]["dc:description"] }}
-            </p>
-          </div>
-          <div class="border rounded-lg p-6">
-            <h2 class="text-xl font-bold mb-4">Dataset Information</h2>
-            <div class="grid grid-cols-2 gap-x-8 gap-y-4">
-              <div>
-                <h3 class="font-semibold">Size</h3>
-                <p class="text-muted-foreground">
-                  {{ formatBytes(dataset.size) }}
-                </p>
-              </div>
-              <div>
-                <h3 class="font-semibold">Columns</h3>
-                <p class="text-muted-foreground">
-                  {{ dataset.metadata.tables[0].tableSchema.columns.length }}
-                </p>
-              </div>
-              <div>
-                <h3 class="font-semibold">Access</h3>
-                <p class="text-muted-foreground">
-                  {{ dataset.public ? "Public" : "Private" }}
-                </p>
-              </div>
-              <div>
-                <h3 class="font-semibold">Owner</h3>
-                <p class="text-muted-foreground">{{ dataset.owner.name }}</p>
+          <div v-if="isLoading" class="space-y-4">
+            <div class="border rounded-lg p-6">
+              <div class="h-6 w-48 bg-muted rounded animate-pulse mb-4"></div>
+              <div class="h-24 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div class="border rounded-lg p-6">
+              <div class="h-6 w-48 bg-muted rounded animate-pulse mb-4"></div>
+              <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div v-for="i in 4" :key="i">
+                  <div
+                    class="h-4 w-24 bg-muted rounded animate-pulse mb-2"
+                  ></div>
+                  <div class="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="border rounded-lg p-6">
-            <h2 class="text-xl font-bold mb-4">Schema Overview</h2>
-            <div class="space-y-4">
-              <div
-                v-for="column in dataset.metadata.tables[0].tableSchema.columns"
-                class="border-b pb-4 last:border-0 last:pb-0"
-              >
-                <h3 class="font-semibold">
-                  {{ column["dc:title"] }}
-                </h3>
-                <p class="text-sm text-muted-foreground mt-1">
-                  {{ column["dc:description"] }}
-                </p>
-                <div class="flex gap-4 mt-2 text-sm">
-                  <span class="text-muted-foreground">
-                    <span class="font-medium">Type:</span>
-                    {{ column.datatype.base }}
-                  </span>
-                  <span
-                    class="text-muted-foreground"
-                    v-if="column.datatype.format"
-                  >
-                    <span class="font-medium">Format:</span>
-                    {{ column.datatype.format }}
-                  </span>
+            <div class="border rounded-lg p-6">
+              <div class="h-6 w-48 bg-muted rounded animate-pulse mb-4"></div>
+              <div class="space-y-4">
+                <div
+                  v-for="i in 3"
+                  :key="i"
+                  class="border-b pb-4 last:border-0 last:pb-0"
+                >
+                  <div
+                    class="h-5 w-32 bg-muted rounded animate-pulse mb-2"
+                  ></div>
+                  <div
+                    class="h-4 w-full bg-muted rounded animate-pulse mb-2"
+                  ></div>
+                  <div class="flex gap-4">
+                    <div class="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                    <div class="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+          <template v-else>
+            <div class="border rounded-lg p-6">
+              <h2 class="text-xl font-bold mb-4">Description</h2>
+              <p class="text-lg text-muted-foreground">
+                {{ dataset.metadata.tables[0]["dc:description"] }}
+              </p>
+            </div>
+            <div class="border rounded-lg p-6">
+              <h2 class="text-xl font-bold mb-4">Dataset Information</h2>
+              <div class="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div>
+                  <h3 class="font-semibold">Size</h3>
+                  <p class="text-muted-foreground">
+                    {{ formatBytes(dataset.size) }}
+                  </p>
+                </div>
+                <div>
+                  <h3 class="font-semibold">Columns</h3>
+                  <p class="text-muted-foreground">
+                    {{ dataset.metadata.tables[0].tableSchema.columns.length }}
+                  </p>
+                </div>
+                <div>
+                  <h3 class="font-semibold">Access</h3>
+                  <p class="text-muted-foreground">
+                    {{ dataset.public ? "Public" : "Private" }}
+                  </p>
+                </div>
+                <div>
+                  <h3 class="font-semibold">Owner</h3>
+                  <p class="text-muted-foreground">{{ dataset.owner.name }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="border rounded-lg p-6">
+              <h2 class="text-xl font-bold mb-4">Schema Overview</h2>
+              <div class="space-y-4">
+                <div
+                  v-for="column in dataset.metadata.tables[0].tableSchema
+                    .columns"
+                  class="border-b pb-4 last:border-0 last:pb-0"
+                >
+                  <h3 class="font-semibold">
+                    {{ column["dc:title"] }}
+                  </h3>
+                  <p class="text-sm text-muted-foreground mt-1">
+                    {{ column["dc:description"] }}
+                  </p>
+                  <div class="flex gap-4 mt-2 text-sm">
+                    <span class="text-muted-foreground">
+                      <span class="font-medium">Type:</span>
+                      {{ column.datatype.base }}
+                    </span>
+                    <span
+                      class="text-muted-foreground"
+                      v-if="column.datatype.format"
+                    >
+                      <span class="font-medium">Format:</span>
+                      {{ column.datatype.format }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
         </TabsContent>
         <TabsContent value="preview" class="pt-4">
-          <div class="flex justify-end gap-2 mb-4">
-            <Button
-              @click="downloadDataset()"
-              variant="default"
-              class="flex items-center gap-2"
-            >
-              <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
-              Download CSV ({{ formatBytes(dataset.size) }})
-            </Button>
-          </div>
-          <div class="border rounded-lg overflow-hidden">
-            <div class="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      v-for="column in dataset.metadata.tables[0].tableSchema
-                        .columns"
-                    >
-                      {{ column["titles"] }}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="row in rows">
-                    <TableCell
-                      v-for="item in row"
-                      class="font-mono whitespace-nowrap"
-                    >
-                      {{ item }}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+          <div v-if="isLoading" class="space-y-4">
+            <div class="flex justify-end">
+              <div class="h-10 w-48 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div class="border rounded-lg overflow-hidden">
+              <div class="overflow-x-auto">
+                <div class="min-w-full">
+                  <div class="h-10 bg-muted animate-pulse"></div>
+                  <div
+                    v-for="i in 5"
+                    :key="i"
+                    class="h-12 bg-muted/50 animate-pulse"
+                  ></div>
+                </div>
+              </div>
             </div>
           </div>
+          <template v-else>
+            <div class="flex justify-end gap-2 mb-4">
+              <Button
+                @click="downloadDataset()"
+                variant="default"
+                class="flex items-center gap-2"
+              >
+                <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
+                Download CSV ({{ formatBytes(dataset.size) }})
+              </Button>
+            </div>
+            <div class="border rounded-lg overflow-hidden">
+              <div class="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead
+                        v-for="column in dataset.metadata.tables[0].tableSchema
+                          .columns"
+                      >
+                        {{ column["titles"] }}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="row in rows">
+                      <TableCell
+                        v-for="item in row"
+                        class="font-mono whitespace-nowrap"
+                      >
+                        {{ item }}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </template>
         </TabsContent>
         <TabsContent value="metadata" class="pt-4">
-          <div class="flex justify-end gap-2 mb-4">
-            <Button
-              @click="downloadMetadata()"
-              variant="default"
-              class="flex items-center gap-2"
-            >
-              <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
-              Download metadata
-            </Button>
-          </div>
-          <div class="border rounded-lg overflow-hidden">
-            <div
-              class="bg-muted px-6 py-3 border-b flex justify-between items-center"
-            >
-              <div class="flex items-center gap-2">
-                <h3 class="text-sm font-semibold">Raw Metadata</h3>
-                <span v-if="isEditing" class="text-xs text-primary font-medium">
-                  (Editing)
-                </span>
+          <div v-if="isLoading" class="space-y-4">
+            <div class="flex justify-end">
+              <div class="h-10 w-48 bg-muted rounded animate-pulse"></div>
+            </div>
+            <div class="border rounded-lg overflow-hidden">
+              <div
+                class="bg-muted px-6 py-3 border-b flex justify-between items-center"
+              >
+                <div class="h-4 w-32 bg-muted/50 rounded animate-pulse"></div>
+                <div class="flex gap-2">
+                  <div class="h-8 w-8 bg-muted/50 rounded animate-pulse"></div>
+                  <div class="h-8 w-8 bg-muted/50 rounded animate-pulse"></div>
+                </div>
               </div>
-              <div class="flex items-center gap-2">
-                <Button
-                  v-if="!isEditing"
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-8 p-0"
-                  @click="copyToClipboard"
-                >
-                  <Icon name="heroicons:clipboard" class="w-4 h-4" />
-                </Button>
-                <Button
-                  v-if="isOwner"
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-8 p-0"
-                  :class="{ 'text-primary': isEditing }"
-                  @click="isEditing ? saveMetadata() : (isEditing = true)"
-                  :disabled="isEditing && !hasMetadataChanges"
-                >
-                  <Icon
-                    :name="
-                      isEditing ? 'heroicons:check' : 'heroicons:pencil-square'
-                    "
-                    class="w-4 h-4"
-                  />
-                </Button>
-                <Button
-                  v-if="isEditing"
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 w-8 p-0"
-                  @click="cancelEditing"
-                >
-                  <Icon name="heroicons:x-mark" class="w-4 h-4" />
-                </Button>
-                <p v-if="metadataError" class="text-sm text-destructive">
-                  {{ metadataError }}
-                </p>
+              <div class="p-6">
+                <div class="h-[500px] bg-muted rounded animate-pulse"></div>
               </div>
             </div>
-            <div class="p-6">
-              <textarea
-                v-model="editableMetadata"
-                :disabled="!isEditing || !isOwner"
-                class="w-full h-[500px] font-mono text-sm p-2 border rounded focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
-                @input="validateMetadata"
-              ></textarea>
-            </div>
           </div>
+          <template v-else>
+            <div class="flex justify-end gap-2 mb-4">
+              <Button
+                @click="downloadMetadata()"
+                variant="default"
+                class="flex items-center gap-2"
+              >
+                <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
+                Download metadata
+              </Button>
+            </div>
+            <div class="border rounded-lg overflow-hidden">
+              <div
+                class="bg-muted px-6 py-3 border-b flex justify-between items-center"
+              >
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-semibold">Raw Metadata</h3>
+                  <span
+                    v-if="isEditing"
+                    class="text-xs text-primary font-medium"
+                  >
+                    (Editing)
+                  </span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <Button
+                    v-if="!isEditing"
+                    variant="ghost"
+                    size="sm"
+                    class="h-8 w-8 p-0"
+                    @click="copyToClipboard"
+                  >
+                    <Icon name="heroicons:clipboard" class="w-4 h-4" />
+                  </Button>
+                  <Button
+                    v-if="isOwner"
+                    variant="ghost"
+                    size="sm"
+                    class="h-8 w-8 p-0"
+                    :class="{ 'text-primary': isEditing }"
+                    @click="isEditing ? saveMetadata() : (isEditing = true)"
+                    :disabled="isEditing && !hasMetadataChanges"
+                  >
+                    <Icon
+                      :name="
+                        isEditing
+                          ? 'heroicons:check'
+                          : 'heroicons:pencil-square'
+                      "
+                      class="w-4 h-4"
+                    />
+                  </Button>
+                  <Button
+                    v-if="isEditing"
+                    variant="ghost"
+                    size="sm"
+                    class="h-8 w-8 p-0"
+                    @click="cancelEditing"
+                  >
+                    <Icon name="heroicons:x-mark" class="w-4 h-4" />
+                  </Button>
+                  <p v-if="metadataError" class="text-sm text-destructive">
+                    {{ metadataError }}
+                  </p>
+                </div>
+              </div>
+              <div class="p-6">
+                <textarea
+                  v-model="editableMetadata"
+                  :disabled="!isEditing || !isOwner"
+                  class="w-full h-[500px] font-mono text-sm p-2 border rounded focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted disabled:text-muted-foreground"
+                  @input="validateMetadata"
+                ></textarea>
+              </div>
+            </div>
+          </template>
         </TabsContent>
         <TabsContent v-if="isOwner" value="settings" class="pt-4">
-          <div class="border rounded-lg p-6">
-            <h2 class="text-xl font-bold mb-6">Dataset Settings</h2>
+          <div v-if="isLoading" class="border rounded-lg p-6 space-y-6">
+            <div class="h-6 w-48 bg-muted rounded animate-pulse mb-6"></div>
             <div class="space-y-6">
               <div>
-                <h3 class="text-lg font-medium mb-4">Access Control</h3>
+                <div class="h-5 w-32 bg-muted rounded animate-pulse mb-4"></div>
                 <div class="flex items-center gap-4">
-                  <label
-                    class="relative inline-flex items-center cursor-pointer"
-                  >
-                    <Switch
-                      v-model="isPublic"
-                      @update:model-value="togglePublicAccess"
-                    />
-                  </label>
-                  <span class="text-sm font-medium">Make dataset public</span>
+                  <div class="h-6 w-12 bg-muted rounded animate-pulse"></div>
+                  <div class="h-4 w-32 bg-muted rounded animate-pulse"></div>
                 </div>
-                <p class="mt-2 text-sm text-muted-foreground">
-                  {{
-                    isPublic
-                      ? "Anyone can view this dataset"
-                      : "Only you can view this dataset"
-                  }}
-                </p>
+                <div class="mt-2 h-4 w-48 bg-muted rounded animate-pulse"></div>
               </div>
               <div>
-                <h3 class="text-lg font-medium mb-4">Danger Zone</h3>
+                <div class="h-5 w-32 bg-muted rounded animate-pulse mb-4"></div>
                 <div
                   class="border border-destructive/20 rounded-lg p-4 bg-destructive/5"
                 >
-                  <h4 class="text-destructive font-medium mb-2">
-                    Delete Dataset
-                  </h4>
-                  <p class="text-destructive/90 text-sm mb-4">
-                    Once you delete a dataset, there is no going back. Please be
-                    certain.
-                  </p>
-                  <Button variant="destructive" @click="confirmDelete">
-                    Delete Dataset
-                  </Button>
+                  <div
+                    class="h-5 w-32 bg-muted rounded animate-pulse mb-2"
+                  ></div>
+                  <div
+                    class="h-4 w-64 bg-muted rounded animate-pulse mb-4"
+                  ></div>
+                  <div class="h-10 w-32 bg-muted rounded animate-pulse"></div>
                 </div>
               </div>
             </div>
           </div>
+          <template v-else>
+            <div class="border rounded-lg p-6">
+              <h2 class="text-xl font-bold mb-6">Dataset Settings</h2>
+              <div class="space-y-6">
+                <div>
+                  <h3 class="text-lg font-medium mb-4">Access Control</h3>
+                  <div class="flex items-center gap-4">
+                    <label
+                      class="relative inline-flex items-center cursor-pointer"
+                    >
+                      <Switch
+                        v-model="isPublic"
+                        @update:model-value="togglePublicAccess"
+                      />
+                    </label>
+                    <span class="text-sm font-medium">Make dataset public</span>
+                  </div>
+                  <p class="mt-2 text-sm text-muted-foreground">
+                    {{
+                      isPublic
+                        ? "Anyone can view this dataset"
+                        : "Only you can view this dataset"
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <h3 class="text-lg font-medium mb-4">Danger Zone</h3>
+                  <div
+                    class="border border-destructive/20 rounded-lg p-4 bg-destructive/5"
+                  >
+                    <h4 class="text-destructive font-medium mb-2">
+                      Delete Dataset
+                    </h4>
+                    <p class="text-destructive/90 text-sm mb-4">
+                      Once you delete a dataset, there is no going back. Please
+                      be certain.
+                    </p>
+                    <Button variant="destructive" @click="confirmDelete">
+                      Delete Dataset
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
         </TabsContent>
       </Tabs>
     </div>
@@ -331,6 +452,8 @@ const hasMetadataChanges = ref(false);
 const isEditing = ref(false);
 const isPublic = ref(false);
 const showDeleteDialog = ref(false);
+
+const isLoading = ref(true);
 
 const copyToClipboard = async () => {
   try {
@@ -458,43 +581,49 @@ const togglePublicAccess = async () => {
 };
 
 onMounted(async () => {
-  const [{ data }, { data: datasetFile }] = await Promise.all([
-    client
-      .from("datasets")
-      .select("id, owner ( name, id ), metadata, size, public")
-      .eq("id", datasetId.value),
+  try {
+    const [{ data }, { data: datasetFile }] = await Promise.all([
+      client
+        .from("datasets")
+        .select("id, owner ( name, id ), metadata, size, public")
+        .eq("id", datasetId.value),
 
-    client.storage
-      .from("datasets")
-      .download(`${datasetId.value}/${datasetId.value}.csv`),
-  ]);
+      client.storage
+        .from("datasets")
+        .download(`${datasetId.value}/${datasetId.value}.csv`),
+    ]);
 
-  if (data?.length) {
-    const {
-      data: { user },
-    } = await client.auth.getUser();
-    isOwner.value = user?.id === data[0].owner.id;
+    if (data?.length) {
+      const {
+        data: { user },
+      } = await client.auth.getUser();
+      isOwner.value = user?.id === data[0].owner.id;
 
-    dataset.value = {
-      id: data[0].id,
-      metadata: toMetadata(data[0].metadata),
-      owner: {
-        //@ts-ignore
-        name: data[0].owner.name,
-      },
-      size: data[0].size,
-      public: data[0].public,
-    };
-    // Initialize editable metadata
-    editableMetadata.value = JSON.stringify(dataset.value.metadata, null, 2);
-    // Initialize public status
-    isPublic.value = dataset.value.public;
-  }
-  if (datasetFile) {
-    rows.value = await parseCsv({
-      file: datasetFile,
-      options: { start: 1, end: 11 },
-    });
+      dataset.value = {
+        id: data[0].id,
+        metadata: toMetadata(data[0].metadata),
+        owner: {
+          //@ts-ignore
+          name: data[0].owner.name,
+        },
+        size: data[0].size,
+        public: data[0].public,
+      };
+      // Initialize editable metadata
+      editableMetadata.value = JSON.stringify(dataset.value.metadata, null, 2);
+      // Initialize public status
+      isPublic.value = dataset.value.public;
+    }
+    if (datasetFile) {
+      rows.value = await parseCsv({
+        file: datasetFile,
+        options: { start: 1, end: 11 },
+      });
+    }
+  } catch (error) {
+    console.error("Error loading dataset:", error);
+  } finally {
+    isLoading.value = false;
   }
 });
 </script>

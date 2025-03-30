@@ -128,7 +128,7 @@
         </Button>
         <div class="flex gap-2">
           <Button variant="outline" @click="previousStage">Previous</Button>
-          <Button type="submit">Next</Button>
+          <Button type="submit" :disabled="!isMetadataValid">Next</Button>
         </div>
       </div>
     </form>
@@ -214,12 +214,24 @@
           variant="outline"
           @click="resetStages"
           class="text-muted-foreground"
+          :disabled="isUploading"
         >
           Cancel
         </Button>
         <div class="flex gap-2">
-          <Button variant="outline" @click="previousStage">Previous</Button>
-          <Button type="submit">Save Dataset</Button>
+          <Button
+            variant="outline"
+            @click="previousStage"
+            :disabled="isUploading"
+            >Previous</Button
+          >
+          <Button type="submit" :disabled="!isColumnsValid || isUploading">
+            <template v-if="isUploading">
+              <Loading class="w-4 h-4 mr-2" />
+              Uploading...
+            </template>
+            <template v-else> Save Dataset </template>
+          </Button>
         </div>
       </div>
     </form>
@@ -365,6 +377,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -420,6 +433,22 @@ const publicDataset = ref(false);
 const datasetName = ref("");
 const datasetDescription = ref("");
 
+const isMetadataValid = computed(() => {
+  return (
+    datasetName.value.trim() !== "" && datasetDescription.value.trim() !== ""
+  );
+});
+
+const isColumnsValid = computed(() => {
+  return (
+    names.value.length > 0 &&
+    names.value.every((name) => name.trim() !== "") &&
+    descriptions.value.every((desc) => desc.trim() !== "") &&
+    dataTypes.value.every((type) => type !== "") &&
+    categories.value.every((category) => category.trim() !== "")
+  );
+});
+
 const names = ref<Array<string>>([]);
 const descriptions = ref<Array<string>>([]);
 const dataTypes = ref<Array<string>>([]);
@@ -432,6 +461,8 @@ const analysisProgress = ref<AnalysisProgress>({
   status: "Analyzing your dataset...",
   percent: 0,
 });
+
+const isUploading = ref(false);
 
 const previews = ref<Map<number, HTMLElement>>(new Map());
 
@@ -599,6 +630,7 @@ const resetStages = () => {
 const uploadDataset = async () => {
   if (datasetFile == null) return;
 
+  isUploading.value = true;
   const formData = new FormData();
 
   const metadata = {
@@ -637,6 +669,9 @@ const uploadDataset = async () => {
     navigateTo(`/datasets/${data.id}`);
   } catch (error) {
     console.error("Error uploading dataset:", error);
+    // You might want to show an error message to the user here
+  } finally {
+    isUploading.value = false;
   }
 };
 
