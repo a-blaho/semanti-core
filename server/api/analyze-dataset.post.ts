@@ -85,23 +85,23 @@ export default defineEventHandler(async (event) => {
 
   async function analyzeDataset(id: string) {
     try {
-      // Analyze columns one by one
-      const analyzedColumns: ColumnMetadata[] = [];
-      const totalColumns = columnAnalysis.length;
+      // Track completed analyses
+      let completedAnalyses = 0;
 
-      for (let i = 0; i < totalColumns; i++) {
-        const col = columnAnalysis[i];
-        const sampleValues = sampleData
-          .slice(1, 6)
-          .map((row: string[]) => row[i]);
+      // Analyze all columns in parallel
+      const columnPromises = columnAnalysis.map(
+        async (col: (typeof columnAnalysis)[0], i: number) => {
+          const sampleValues = sampleData
+            .slice(1, 6)
+            .map((row: string[]) => row[i]);
 
-        try {
-          const completion = await openai.chat.completions.create({
-            model: "gpt-4-turbo-preview",
-            messages: [
-              {
-                role: "system",
-                content: `You are a data scientist analyzing a single column from a dataset. 
+          try {
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4-turbo-preview",
+              messages: [
+                {
+                  role: "system",
+                  content: `You are a data scientist analyzing a single column from a dataset. 
 Analyze the column data and provide:
 1. A clear, descriptive name (max 30 chars)
 2. A brief description (max 100 chars)
@@ -123,6 +123,9 @@ For numbers, use these formats:
 - "age" (0-150)
 - "rating" (0-5)
 - "probability" (0-1)
+- "currency" (money)
+- "latitude" (geographic latitude)
+- "longitude" (geographic longitude)
 
 For strings, use these formats:
 - "text" (general text)
@@ -131,25 +134,21 @@ For strings, use these formats:
 - "identifier" (unique IDs)
 - "email" (emails)
 - "phone" (phone numbers)
-- "date" (dates)
-- "time" (times)
-- "currency" (money)
-- "percentage" (percentages)
+- "url" (URLs)
+- "uuid" (UUIDs)
 - "coordinates" (geo coords)
 - "country" (countries)
 - "language" (languages)
 - "ipv4" (IP addresses)
-- "url" (URLs)
-- "uuid" (UUIDs)
 - "description" (>100 chars)
 - "title" (30-100 chars)
 
 For unclear data:
 - "inconclusive"`,
-              },
-              {
-                role: "user",
-                content: `Analyze this column from "${fileName}":
+                },
+                {
+                  role: "user",
+                  content: `Analyze this column from "${fileName}":
 
 Header: ${col.header}
 Sample values: ${sampleValues.join(", ")}
@@ -170,37 +169,56 @@ Respond with a JSON object matching this type:
     details: string[];
   }
 }`,
+                },
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.3,
+            });
+
+            if (!completion?.choices?.[0]?.message?.content) {
+              throw new Error("Empty response from OpenAI");
+            }
+
+            const columnMetadata = JSON.parse(
+              completion.choices[0].message.content
+            ) as ColumnMetadata;
+
+            // Update progress based on completed analyses
+            completedAnalyses++;
+            const progress = Math.round(
+              (completedAnalyses / columnAnalysis.length) * 100
+            );
+            analysisStore.set(id, {
+              status: "analyzing",
+              progress,
+              lastUpdated: Date.now(),
+            });
+
+            // Preserve decision tree reasoning and append OpenAI analysis
+            return {
+              ...columnMetadata,
+              reasoning: {
+                mainReason: `${col.reasoning.mainReason}\nAI Analysis: ${columnMetadata.reasoning.mainReason}`,
+                details: [
+                  ...col.reasoning.details,
+                  "AI Analysis:",
+                  ...columnMetadata.reasoning.details,
+                ],
               },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.3,
-          });
-
-          if (!completion?.choices?.[0]?.message?.content) {
-            throw new Error("Empty response from OpenAI");
+            };
+          } catch (error) {
+            console.error(
+              `Error analyzing column ${i} (${col.header}):`,
+              error
+            );
+            throw new Error(
+              `Failed to analyze column "${col.header}": ${error instanceof Error ? error.message : "Unknown error"}`
+            );
           }
-
-          const columnMetadata = JSON.parse(
-            completion.choices[0].message.content
-          ) as ColumnMetadata;
-          analyzedColumns.push(columnMetadata);
-
-          // Update progress
-          const progress = Math.round(
-            (analyzedColumns.length / totalColumns) * 100
-          );
-          analysisStore.set(id, {
-            status: "analyzing",
-            progress,
-            lastUpdated: Date.now(),
-          });
-        } catch (error) {
-          console.error(`Error analyzing column ${i} (${col.header}):`, error);
-          throw new Error(
-            `Failed to analyze column "${col.header}": ${error instanceof Error ? error.message : "Unknown error"}`
-          );
         }
-      }
+      );
+
+      const analyzedColumns = await Promise.all(columnPromises);
 
       // Generate dataset-level metadata
       const dataTypes = new Set(analyzedColumns.map((col) => col.dataType));

@@ -194,12 +194,8 @@
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="boolean">Boolean</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="datetime">Datetime</SelectItem>
-              <SelectItem value="duration">Duration</SelectItem>
               <SelectItem value="number">Number</SelectItem>
               <SelectItem value="string">String</SelectItem>
-              <SelectItem value="time">Time</SelectItem>
             </SelectContent>
           </Select>
 
@@ -233,27 +229,37 @@
       :open="previewIndex !== null"
       @update:open="(val: boolean) => !val && (previewIndex = null)"
     >
-      <DialogContent class="max-w-md">
+      <DialogContent class="max-w-4xl">
         <DialogHeader>
           <DialogTitle>{{
-            previewIndex !== null ? names[previewIndex] : ""
+            previewIndex !== null ? columns[previewIndex] : ""
           }}</DialogTitle>
         </DialogHeader>
-        <div class="space-y-6">
-          <div>
-            <h3 class="font-medium text-foreground mb-3">Analysis Results</h3>
+        <div
+          class="grid gap-4"
+          :class="useOpenAI ? 'grid-cols-2' : 'grid-cols-1'"
+        >
+          <div :class="!useOpenAI && 'col-span-1'">
+            <h3 class="font-medium text-foreground mb-3">
+              Decision Tree Analysis
+            </h3>
             <div class="bg-muted rounded-lg p-4">
               <p class="text-foreground">
                 {{
                   previewIndex !== null
-                    ? analysisResults[previewIndex].reasoning.mainReason
+                    ? analysisResults[previewIndex].reasoning.mainReason.split(
+                        "\n"
+                      )[0]
                     : ""
                 }}
               </p>
               <ul class="mt-3 space-y-2">
                 <li
                   v-for="(detail, i) in previewIndex !== null
-                    ? analysisResults[previewIndex].reasoning.details
+                    ? analysisResults[previewIndex].reasoning.details.slice(
+                        0,
+                        -2
+                      )
                     : []"
                   :key="i"
                   class="text-sm text-muted-foreground flex items-start"
@@ -265,9 +271,36 @@
             </div>
           </div>
 
-          <div>
+          <div v-if="useOpenAI">
+            <h3 class="font-medium text-foreground mb-3">AI Analysis</h3>
+            <div class="bg-muted rounded-lg p-4">
+              <p class="text-foreground">
+                {{
+                  previewIndex !== null
+                    ? analysisResults[previewIndex].reasoning.mainReason.split(
+                        "\n"
+                      )[1]
+                    : ""
+                }}
+              </p>
+              <ul class="mt-3 space-y-2">
+                <li
+                  v-for="(detail, i) in previewIndex !== null
+                    ? analysisResults[previewIndex].reasoning.details.slice(-2)
+                    : []"
+                  :key="i"
+                  class="text-sm text-muted-foreground flex items-start"
+                >
+                  <span class="text-primary mr-2">•</span>
+                  {{ detail }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div :class="!useOpenAI && 'col-span-1'">
             <h3 class="font-medium text-foreground mb-3">Sample Values</h3>
-            <div class="bg-muted rounded-lg p-4 max-h-[200px] overflow-y-auto">
+            <div class="bg-muted rounded-lg p-4 max-h-[150px] overflow-y-auto">
               <ul class="space-y-2">
                 <li
                   v-for="value in previewIndex !== null
@@ -281,7 +314,7 @@
             </div>
           </div>
 
-          <div>
+          <div :class="!useOpenAI && 'col-span-1'">
             <h3 class="font-medium text-foreground mb-3">Statistics</h3>
             <div class="bg-muted rounded-lg p-4">
               <div class="grid grid-cols-2 gap-4">
