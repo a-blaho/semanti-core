@@ -196,6 +196,7 @@
               <SelectItem value="boolean">Boolean</SelectItem>
               <SelectItem value="number">Number</SelectItem>
               <SelectItem value="string">String</SelectItem>
+              <SelectItem value="unknown">Unknown</SelectItem>
             </SelectContent>
           </Select>
 
@@ -257,22 +258,11 @@
             </h3>
             <div class="bg-muted rounded-lg p-4">
               <p class="text-foreground">
-                {{
-                  previewIndex !== null
-                    ? analysisResults[previewIndex].reasoning.mainReason.split(
-                        "\n"
-                      )[0]
-                    : ""
-                }}
+                {{ decisionTreeReasoning }}
               </p>
               <ul class="mt-3 space-y-2">
                 <li
-                  v-for="(detail, i) in previewIndex !== null
-                    ? analysisResults[previewIndex].reasoning.details.slice(
-                        0,
-                        -2
-                      )
-                    : []"
+                  v-for="(detail, i) in decisionTreeDetails"
                   :key="i"
                   class="text-sm text-muted-foreground flex items-start"
                 >
@@ -287,19 +277,11 @@
             <h3 class="font-medium text-foreground mb-3">AI Analysis</h3>
             <div class="bg-muted rounded-lg p-4">
               <p class="text-foreground">
-                {{
-                  previewIndex !== null
-                    ? analysisResults[previewIndex].reasoning.mainReason.split(
-                        "\n"
-                      )[1]
-                    : ""
-                }}
+                {{ aiAnalysisReasoning }}
               </p>
               <ul class="mt-3 space-y-2">
                 <li
-                  v-for="(detail, i) in previewIndex !== null
-                    ? analysisResults[previewIndex].reasoning.details.slice(-2)
-                    : []"
+                  v-for="(detail, i) in aiAnalysisDetails"
                   :key="i"
                   class="text-sm text-muted-foreground flex items-start"
                 >
@@ -466,6 +448,36 @@ const isUploading = ref(false);
 
 const previews = ref<Map<number, HTMLElement>>(new Map());
 
+const decisionTreeDetails = computed(() => {
+  const index = previewIndex.value;
+  if (index === null) return [];
+  const result = analysisResults.value[index];
+  return result.decisionTreeReasoning?.details || result.reasoning.details;
+});
+
+const aiAnalysisDetails = computed(() => {
+  const index = previewIndex.value;
+  if (index === null) return [];
+  const result = analysisResults.value[index];
+  return result.aiReasoning?.details || [];
+});
+
+const decisionTreeReasoning = computed(() => {
+  const index = previewIndex.value;
+  if (index === null) return "";
+  const result = analysisResults.value[index];
+  return (
+    result.decisionTreeReasoning?.mainReason || result.reasoning.mainReason
+  );
+});
+
+const aiAnalysisReasoning = computed(() => {
+  const index = previewIndex.value;
+  if (index === null) return "";
+  const result = analysisResults.value[index];
+  return result.aiReasoning?.mainReason || "";
+});
+
 const handleDrop = (event: DragEvent) =>
   processFiles(event.dataTransfer?.files);
 const handleInput = () => processFiles(fileInput.value?.files);
@@ -546,7 +558,8 @@ const processFiles = async (files: FileList | undefined | null) => {
         dataType: analysis.columns[index].dataType,
         dataFormat: analysis.columns[index].category,
         confidence: analysis.columns[index].confidence,
-        reasoning: analysis.columns[index].reasoning,
+        decisionTreeReasoning: result.reasoning,
+        aiReasoning: analysis.columns[index].aiReasoning,
       }));
 
       analysisProgress.value = {
@@ -593,6 +606,8 @@ const useDefaultAnalysis = () => {
         return "date";
       case "boolean":
         return "boolean";
+      case "unknown":
+        return "unknown";
       default:
         return "string";
     }
@@ -644,15 +659,18 @@ const uploadDataset = async () => {
       description: descriptions.value[index],
       datatype: dataTypes.value[index],
       category: categories.value[index],
-      "ai:reasoning": useOpenAI.value
-        ? [
-            analysisResults.value[index].reasoning.mainReason.split("\n")[1],
-            ...analysisResults.value[index].reasoning.details.slice(-2),
-          ].join("\n")
-        : undefined,
+      "ai:reasoning":
+        useOpenAI.value && analysisResults.value[index].aiReasoning
+          ? [
+              analysisResults.value[index].aiReasoning.mainReason,
+              ...analysisResults.value[index].aiReasoning.details,
+            ].join("\n")
+          : undefined,
       "dt:reasoning": [
-        analysisResults.value[index].reasoning.mainReason.split("\n")[0],
-        ...analysisResults.value[index].reasoning.details.slice(0, -2),
+        analysisResults.value[index].decisionTreeReasoning?.mainReason ||
+          analysisResults.value[index].reasoning.mainReason,
+        ...(analysisResults.value[index].decisionTreeReasoning?.details ||
+          analysisResults.value[index].reasoning.details),
       ].join("\n"),
     })),
   };

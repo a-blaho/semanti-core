@@ -10,6 +10,14 @@ export interface ColumnAnalysis {
     mainReason: string;
     details: string[];
   };
+  decisionTreeReasoning?: {
+    mainReason: string;
+    details: string[];
+  };
+  aiReasoning?: {
+    mainReason: string;
+    details: string[];
+  };
 }
 
 export interface NumberStats {

@@ -6,7 +6,11 @@ interface ColumnMetadata {
   dataType: string;
   category: string;
   confidence: number;
-  reasoning: {
+  decisionTreeReasoning: {
+    mainReason: string;
+    details: string[];
+  };
+  aiReasoning?: {
     mainReason: string;
     details: string[];
   };
@@ -113,7 +117,6 @@ Use ONLY these data types:
 - "string" (text)
 - "number" (numeric)
 - "boolean" (true/false)
-- "date" (dates)
 - "unknown" (unclear)
 
 For numbers, use these formats:
@@ -179,9 +182,20 @@ Respond with a JSON object matching this type:
               throw new Error("Empty response from OpenAI");
             }
 
-            const columnMetadata = JSON.parse(
-              completion.choices[0].message.content
-            ) as ColumnMetadata;
+            const response = JSON.parse(completion.choices[0].message.content);
+
+            const columnMetadata: ColumnMetadata = {
+              name: response.name,
+              description: response.description,
+              dataType: response.dataType,
+              category: response.category,
+              confidence: response.confidence,
+              decisionTreeReasoning: col.reasoning,
+              aiReasoning: {
+                mainReason: response.reasoning.mainReason,
+                details: response.reasoning.details,
+              },
+            };
 
             // Update progress based on completed analyses
             completedAnalyses++;
@@ -194,18 +208,7 @@ Respond with a JSON object matching this type:
               lastUpdated: Date.now(),
             });
 
-            // Preserve decision tree reasoning and append OpenAI analysis
-            return {
-              ...columnMetadata,
-              reasoning: {
-                mainReason: `${col.reasoning.mainReason}\nAI Analysis: ${columnMetadata.reasoning.mainReason}`,
-                details: [
-                  ...col.reasoning.details,
-                  "AI Analysis:",
-                  ...columnMetadata.reasoning.details,
-                ],
-              },
-            };
+            return columnMetadata;
           } catch (error) {
             console.error(
               `Error analyzing column ${i} (${col.header}):`,
