@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -95,6 +96,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import type { Database } from "~/database.types";
+import { ensureUserRecordExists } from "~/utils/ensureUserRecord";
 
 definePageMeta({ layout: "dashboard" });
 
@@ -152,4 +154,8 @@ const { data: datasets, pending } = await useAsyncData(
   },
   { watch: [page, search, orderBy] }
 );
+
+onMounted(() => {
+  ensureUserRecordExists(client);
+});
 </script>

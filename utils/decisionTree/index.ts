@@ -11,6 +11,8 @@ export function detectDataTypes(
   const parsedData = Papa.parse<string[]>(csvData, {
     header: false,
     skipEmptyLines: true,
+    quoteChar: '"',
+    escapeChar: '"',
   }).data;
 
   const headers = parsedData[0];

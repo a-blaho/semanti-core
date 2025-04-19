@@ -43,37 +43,43 @@ const buttonVariant: ButtonVariants["variant"] = "ghost";
           </NavigationMenuItem>
           <div class="h-4" />
           <NavigationMenuItem>
-            <NavigationMenuLink
-              :active="route.path === '/dashboard'"
-              class="block px-4 py-2 rounded-md text-white/70 hover:bg-white/10 hover:text-white data-[active]:bg-white/10 data-[active]:text-white"
-            >
-              <NuxtLink to="/dashboard" class="flex items-center gap-2">
-                <Icon name="heroicons:squares-2x2" class="w-4 h-4" />
-                Dashboard
-              </NuxtLink>
-            </NavigationMenuLink>
+            <NuxtLink to="/dashboard">
+              <NavigationMenuLink
+                :active="route.path === '/dashboard'"
+                class="block px-4 py-2 rounded-md text-white/70 hover:bg-white/10 hover:text-white data-[active]:bg-white/10 data-[active]:text-white"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="heroicons:squares-2x2" class="w-4 h-4" />
+                  Dashboard
+                </div>
+              </NavigationMenuLink>
+            </NuxtLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink
-              :active="route.path === '/my-datasets'"
-              class="block px-4 py-2 rounded-md text-white/70 hover:bg-white/10 hover:text-white data-[active]:bg-white/10 data-[active]:text-white"
-            >
-              <NuxtLink to="/my-datasets" class="flex items-center gap-2">
-                <Icon name="heroicons:folder" class="w-4 h-4" />
-                My datasets
-              </NuxtLink>
-            </NavigationMenuLink>
+            <NuxtLink to="/my-datasets">
+              <NavigationMenuLink
+                :active="route.path === '/my-datasets'"
+                class="block px-4 py-2 rounded-md text-white/70 hover:bg-white/10 hover:text-white data-[active]:bg-white/10 data-[active]:text-white"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="heroicons:folder" class="w-4 h-4" />
+                  My datasets
+                </div>
+              </NavigationMenuLink>
+            </NuxtLink>
           </NavigationMenuItem>
           <NavigationMenuItem>
-            <NavigationMenuLink
-              :active="route.path === '/browse'"
-              class="block px-4 py-2 rounded-md text-white/70 hover:bg-white/10 hover:text-white data-[active]:bg-white/10 data-[active]:text-white"
-            >
-              <NuxtLink to="/browse" class="flex items-center gap-2">
-                <Icon name="heroicons:magnifying-glass" class="w-4 h-4" />
-                Browse
-              </NuxtLink>
-            </NavigationMenuLink>
+            <NuxtLink to="/browse">
+              <NavigationMenuLink
+                :active="route.path === '/browse'"
+                class="block px-4 py-2 rounded-md text-white/70 hover:bg-white/10 hover:text-white data-[active]:bg-white/10 data-[active]:text-white"
+              >
+                <div class="flex items-center gap-2">
+                  <Icon name="heroicons:magnifying-glass" class="w-4 h-4" />
+                  Browse
+                </div>
+              </NavigationMenuLink>
+            </NuxtLink>
           </NavigationMenuItem>
         </NavigationMenuList>
       </NavigationMenu>

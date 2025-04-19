@@ -359,6 +359,7 @@
 </template>
 
 <script setup lang="ts">
+import Papa from "papaparse";
 import { computed } from "vue";
 import { Button } from "~/components/ui/button";
 import {
@@ -511,10 +512,12 @@ const processFiles = async (files: FileList | undefined | null) => {
   nextStage();
 
   const fileContent = await datasetFile.text();
-  const parsedData = await parseCsv({
-    file: datasetFile,
-    options: { start: 0, end: 6 }, // Get headers + 5 rows for analysis
-  });
+  const parsedData = Papa.parse<string[]>(fileContent, {
+    header: false,
+    skipEmptyLines: true,
+    quoteChar: '"',
+    escapeChar: '"',
+  }).data.slice(0, 6); // Get headers + 5 rows for analysis
 
   columns.value = parsedData[0];
   analysisResults.value = detectDataTypes(fileContent);

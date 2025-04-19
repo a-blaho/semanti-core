@@ -59,6 +59,21 @@ const email = ref("");
 const token = ref("");
 const emailSent = ref(false);
 
+// Function to create user record in database
+const createUserRecord = async () => {
+  try {
+    const response = await fetch("/api/users", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      console.error("Failed to create user record:", await response.text());
+    }
+  } catch (error) {
+    console.error("Error creating user record:", error);
+  }
+};
+
 const signIn = async () => {
   if (!emailSent.value) {
     const { error } = await client.auth.signInWithOtp({
@@ -83,6 +98,9 @@ const signIn = async () => {
       return;
     }
 
+    // Create user record after successful login
+    await createUserRecord();
+
     navigateTo("/dashboard");
   }
 };
@@ -95,5 +113,17 @@ const signInWithGitHub = async () => {
   if (error) {
     alert(error.message);
   }
+
+  // Note: For OAuth, we need to handle the callback separately
+  // The user record will be created when they land on the dashboard
 };
+
+// Listen for auth state changes to create user record after OAuth login
+onMounted(() => {
+  client.auth.onAuthStateChange((event, session) => {
+    if (event === "SIGNED_IN" && session) {
+      createUserRecord();
+    }
+  });
+});
 </script>

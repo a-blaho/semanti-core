@@ -40,8 +40,10 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { Button } from "~/components/ui/button";
 import type { Database } from "~/database.types";
+import { ensureUserRecordExists } from "~/utils/ensureUserRecord";
 import { getPagination } from "~/utils/getPagination";
 import { toDataset } from "~/utils/mapDataset";
 
@@ -55,6 +57,10 @@ const pageSize = 6;
 
 const page = ref<number>(0);
 const isLastPage = ref<boolean>(false);
+
+onMounted(() => {
+  ensureUserRecordExists(client);
+});
 
 const { data: myDatasets, pending } = await useAsyncData(
   "my-datasets",

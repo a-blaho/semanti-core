@@ -17,7 +17,7 @@
         </div>
       </div>
       <div v-if="!isLoading">
-        <DatasetStar :dataset-id="dataset?.id" />
+        <DatasetStar :dataset-id="dataset?.id || ''" />
       </div>
     </div>
     <div class="overflow-auto">
@@ -90,7 +90,7 @@
             <div class="border rounded-lg p-6">
               <h2 class="text-xl font-bold mb-4">Description</h2>
               <p class="text-lg text-muted-foreground">
-                {{ dataset.metadata.tables[0]["dc:description"] }}
+                {{ dataset?.metadata.tables[0]["dc:description"] }}
               </p>
             </div>
             <div class="border rounded-lg p-6">
@@ -99,24 +99,24 @@
                 <div>
                   <h3 class="font-semibold">Size</h3>
                   <p class="text-muted-foreground">
-                    {{ formatBytes(dataset.size) }}
+                    {{ formatBytes(dataset?.size || 0) }}
                   </p>
                 </div>
                 <div>
                   <h3 class="font-semibold">Columns</h3>
                   <p class="text-muted-foreground">
-                    {{ dataset.metadata.tables[0].tableSchema.columns.length }}
+                    {{ dataset?.metadata.tables[0].tableSchema.columns.length }}
                   </p>
                 </div>
                 <div>
                   <h3 class="font-semibold">Access</h3>
                   <p class="text-muted-foreground">
-                    {{ dataset.public ? "Public" : "Private" }}
+                    {{ dataset?.public ? "Public" : "Private" }}
                   </p>
                 </div>
                 <div>
                   <h3 class="font-semibold">Owner</h3>
-                  <p class="text-muted-foreground">{{ dataset.owner.name }}</p>
+                  <p class="text-muted-foreground">{{ dataset?.owner.name }}</p>
                 </div>
               </div>
             </div>
@@ -124,7 +124,7 @@
               <h2 class="text-xl font-bold mb-4">Schema Overview</h2>
               <div class="space-y-4">
                 <div
-                  v-for="column in dataset.metadata.tables[0].tableSchema
+                  v-for="column in dataset?.metadata.tables[0].tableSchema
                     .columns"
                   class="border-b pb-4 last:border-0 last:pb-0"
                 >
@@ -178,7 +178,7 @@
                 class="flex items-center gap-2"
               >
                 <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
-                Download CSV ({{ formatBytes(dataset.size) }})
+                Download CSV ({{ formatBytes(dataset?.size || 0) }})
               </Button>
             </div>
             <div class="border rounded-lg overflow-hidden">
@@ -187,7 +187,7 @@
                   <TableHeader>
                     <TableRow>
                       <TableHead
-                        v-for="column in dataset.metadata.tables[0].tableSchema
+                        v-for="column in dataset?.metadata.tables[0].tableSchema
                           .columns"
                       >
                         {{ column["titles"] }}
@@ -403,6 +403,7 @@
 </template>
 
 <script setup lang="ts">
+import Papa from "papaparse";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -615,10 +616,13 @@ onMounted(async () => {
       isPublic.value = dataset.value.public;
     }
     if (datasetFile) {
-      rows.value = await parseCsv({
-        file: datasetFile,
-        options: { start: 1, end: 11 },
-      });
+      const fileContent = await datasetFile.text();
+      rows.value = Papa.parse<string[]>(fileContent, {
+        header: false,
+        skipEmptyLines: true,
+        quoteChar: '"',
+        escapeChar: '"',
+      }).data.slice(1, 11);
     }
   } catch (error) {
     console.error("Error loading dataset:", error);

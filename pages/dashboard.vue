@@ -30,8 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import type { Database } from "~/database.types";
+import { ensureUserRecordExists } from "~/utils/ensureUserRecord";
 import { toDataset } from "~/utils/mapDataset";
 
 definePageMeta({
@@ -40,6 +41,10 @@ definePageMeta({
 
 const client = useSupabaseClient<Database>();
 provide("page-context", "dashboard");
+
+onMounted(() => {
+  ensureUserRecordExists(client);
+});
 
 const { data: recentDatasets, pending } = await useAsyncData(
   "recent",

@@ -293,7 +293,7 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
       0.9,
       values.filter((v) => !v).length / values.length,
       textStats,
-      values.slice(0, 5),
+      Array.from(uniqueValues),
       "Categorical data pattern detected",
       [
         `Unique values: ${uniqueValues.size}`,
@@ -492,21 +492,24 @@ export function createDecisionTree(): DecisionTreeNode {
       falseBranch: {
         condition: (data) => isBinaryData(data.values),
         trueBranch: {
-          result: (data) =>
-            createAnalysis(
+          result: (data) => {
+            // Get unique values for binary data
+            const uniqueValues = Array.from(new Set(data.values));
+            return createAnalysis(
               data.header,
               "boolean",
               "binary",
               calculateConfidence(data.values, "boolean", "binary", null),
               data.missingValueRatio,
               null,
-              data.sampleValues,
+              uniqueValues,
               "Binary categorical values detected",
               [
                 "Values are strictly binary (true/false, yes/no, 0/1, y/n)",
                 "Pattern-based classification",
               ]
-            ),
+            );
+          },
         },
         falseBranch: {
           condition: (data) => isNumericData(data.values),
