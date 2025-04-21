@@ -28,6 +28,9 @@
               v-model="email"
               placeholder="Email"
               required
+              :disabled="emailSent"
+              ref="emailInput"
+              @input="validateEmail"
             />
             <Input
               v-if="emailSent"
@@ -35,9 +38,35 @@
               v-model="token"
               placeholder="Token"
               required
+              @input="validateToken"
             />
-            <Button type="submit" class="w-full">
-              {{ emailSent ? "Sign in" : "Send code" }}
+            <p v-if="errorMessage" class="text-sm text-destructive mt-1">
+              {{ errorMessage }}
+            </p>
+            <Button
+              type="submit"
+              class="w-full"
+              :disabled="
+                !isValidEmail || (emailSent && !isValidToken) || isLoading
+              "
+            >
+              <template v-if="isLoading">
+                <Icon name="uil:spinner" class="w-4 h-4 mr-2 animate-spin" />
+                Sending...
+              </template>
+              <template v-else>
+                {{ emailSent ? "Sign in" : "Send code" }}
+              </template>
+            </Button>
+            <Button
+              v-if="emailSent"
+              type="button"
+              variant="ghost"
+              class="w-full"
+              @click="resetEmailState"
+            >
+              <Icon name="uil:arrow-left" class="w-4 h-4 mr-2" />
+              Back to email
             </Button>
           </form>
         </div>
@@ -58,6 +87,35 @@ const client = useSupabaseClient();
 const email = ref("");
 const token = ref("");
 const emailSent = ref(false);
+const isValidEmail = ref(false);
+const isValidToken = ref(false);
+const emailInput = ref<HTMLInputElement | null>(null);
+const isLoading = ref(false);
+const errorMessage = ref("");
+
+// Function to validate email format
+const validateEmail = () => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  isValidEmail.value = emailRegex.test(email.value);
+};
+
+// Function to validate token
+const validateToken = () => {
+  isValidToken.value = token.value.length > 0;
+};
+
+// Function to reset email state
+const resetEmailState = () => {
+  emailSent.value = false;
+  token.value = "";
+  isValidToken.value = false;
+  // Re-enable email input and focus it
+  nextTick(() => {
+    if (emailInput.value) {
+      emailInput.value.$el.focus();
+    }
+  });
+};
 
 // Function to create user record in database
 const createUserRecord = async () => {
@@ -76,17 +134,24 @@ const createUserRecord = async () => {
 
 const signIn = async () => {
   if (!emailSent.value) {
-    const { error } = await client.auth.signInWithOtp({
-      email: email.value,
-    });
+    isLoading.value = true;
+    errorMessage.value = "";
+    try {
+      const { error } = await client.auth.signInWithOtp({
+        email: email.value,
+      });
 
-    if (error) {
-      alert(error.message);
-      return;
+      if (error) {
+        errorMessage.value = error.message;
+        return;
+      }
+
+      emailSent.value = true;
+    } finally {
+      isLoading.value = false;
     }
-
-    emailSent.value = true;
   } else {
+    errorMessage.value = "";
     const { error } = await client.auth.verifyOtp({
       email: email.value,
       token: token.value,
@@ -94,7 +159,7 @@ const signIn = async () => {
     });
 
     if (error) {
-      alert(error.message);
+      errorMessage.value = error.message;
       return;
     }
 
@@ -106,20 +171,25 @@ const signIn = async () => {
 };
 
 const signInWithGitHub = async () => {
+  errorMessage.value = "";
   const { error } = await client.auth.signInWithOAuth({
     provider: "github",
   });
 
   if (error) {
-    alert(error.message);
+    errorMessage.value = error.message;
   }
 
   // Note: For OAuth, we need to handle the callback separately
   // The user record will be created when they land on the dashboard
 };
 
-// Listen for auth state changes to create user record after OAuth login
+// Focus email input on mount
 onMounted(() => {
+  if (emailInput.value) {
+    emailInput.value.$el.focus();
+  }
+
   client.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_IN" && session) {
       createUserRecord();
