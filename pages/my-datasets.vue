@@ -74,9 +74,21 @@ const { data: myDatasets, pending } = await useAsyncData(
 
     const { data, count } = await client
       .from("datasets")
-      .select("id, name, metadata, public, owner (name), size, created_at", {
-        count: "exact",
-      })
+      .select(
+        `
+        id, 
+        name, 
+        metadata, 
+        public, 
+        owner (name), 
+        size, 
+        created_at,
+        stars:stars(count)
+      `,
+        {
+          count: "exact",
+        }
+      )
       .eq("owner", user.id)
       .order("created_at", { ascending: false })
       .range(pagination.from, pagination.to);
@@ -88,6 +100,21 @@ const { data: myDatasets, pending } = await useAsyncData(
       };
     }
 
+    // Get which datasets the user has starred
+    const { data: userStars } = await client
+      .from("stars")
+      .select("dataset_id")
+      .eq("user_id", user.id)
+      .in(
+        "dataset_id",
+        data.map((d) => d.id)
+      );
+
+    // Create set for quick lookup
+    const starredDatasetIds = new Set(
+      (userStars || []).map((s) => s.dataset_id)
+    );
+
     if (count / pageSize - 1 <= page.value) {
       isLastPage.value = true;
     } else {
@@ -95,7 +122,11 @@ const { data: myDatasets, pending } = await useAsyncData(
     }
 
     return {
-      data: data.map(toDataset),
+      data: data.map((dataset) => ({
+        ...toDataset(dataset),
+        isStarred: starredDatasetIds.has(dataset.id),
+        starCount: dataset.stars?.[0]?.count || 0,
+      })),
       total: count,
     };
   },

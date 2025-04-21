@@ -57,17 +57,45 @@ const { data: recentDatasets, pending } = await useAsyncData(
 
       const { data } = await client
         .from("datasets")
-        .select("id, name, metadata, size, public, owner(name), created_at")
+        .select(
+          `
+          id, 
+          name, 
+          metadata, 
+          size, 
+          public, 
+          owner(name), 
+          created_at,
+          stars:stars(count)
+        `
+        )
         .eq("owner", user.id)
         .order("created_at", { ascending: false })
         .limit(4);
 
       if (!data) return [];
 
+      // Get which datasets the user has starred
+      const { data: userStars } = await client
+        .from("stars")
+        .select("dataset_id")
+        .eq("user_id", user.id)
+        .in(
+          "dataset_id",
+          data.map((d) => d.id)
+        );
+
+      // Create set for quick lookup
+      const starredDatasetIds = new Set(
+        (userStars || []).map((s) => s.dataset_id)
+      );
+
       try {
-        const transformed = data.map((d) => {
-          return toDataset(d);
-        });
+        const transformed = data.map((dataset) => ({
+          ...toDataset(dataset),
+          isStarred: starredDatasetIds.has(dataset.id),
+          starCount: dataset.stars?.[0]?.count || 0,
+        }));
         return transformed;
       } catch (transformError) {
         console.error("Error transforming datasets:", transformError);

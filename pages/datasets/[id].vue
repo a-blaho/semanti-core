@@ -17,7 +17,13 @@
         </div>
       </div>
       <div v-if="!isLoading">
-        <DatasetStar :dataset-id="dataset?.id || ''" />
+        <DatasetStar
+          :dataset-id="dataset?.id || ''"
+          :is-starred="dataset?.isStarred || false"
+          :star-count="dataset?.starCount || 0"
+          @update:is-starred="(value) => dataset && (dataset.isStarred = value)"
+          @update:star-count="(value) => dataset && (dataset.starCount = value)"
+        />
       </div>
     </div>
     <div class="overflow-auto">
@@ -444,6 +450,8 @@ const dataset = ref<null | {
   owner: { name: string };
   size: number;
   public: boolean;
+  isStarred: boolean;
+  starCount: number;
 }>(null);
 const rows = ref<any>([]);
 
@@ -586,7 +594,16 @@ onMounted(async () => {
     const [{ data }, { data: datasetFile }] = await Promise.all([
       client
         .from("datasets")
-        .select("id, owner ( name, id ), metadata, size, public")
+        .select(
+          `
+          id, 
+          owner ( name, id ), 
+          metadata, 
+          size, 
+          public,
+          stars:stars(count)
+        `
+        )
         .eq("id", datasetId.value),
 
       client.storage
@@ -600,6 +617,14 @@ onMounted(async () => {
       } = await client.auth.getUser();
       isOwner.value = user?.id === data[0].owner.id;
 
+      // Get whether the user has starred this dataset
+      const { data: userStar } = await client
+        .from("stars")
+        .select("dataset_id")
+        .eq("dataset_id", data[0].id)
+        .eq("user_id", user?.id || "")
+        .maybeSingle();
+
       dataset.value = {
         id: data[0].id,
         metadata: toMetadata(data[0].metadata),
@@ -609,6 +634,8 @@ onMounted(async () => {
         },
         size: data[0].size,
         public: data[0].public,
+        isStarred: userStar !== null,
+        starCount: data[0].stars?.[0]?.count || 0,
       };
       // Initialize editable metadata
       editableMetadata.value = JSON.stringify(dataset.value.metadata, null, 2);

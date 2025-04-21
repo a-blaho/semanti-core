@@ -117,9 +117,21 @@ const { data: datasets, pending } = await useAsyncData(
 
     const partialQuery = client
       .from("datasets")
-      .select("id, name, metadata, public, owner (name), size, created_at", {
-        count: "exact",
-      })
+      .select(
+        `
+        id, 
+        name, 
+        metadata, 
+        public, 
+        owner (name), 
+        size, 
+        created_at,
+        stars:stars(count)
+      `,
+        {
+          count: "exact",
+        }
+      )
       .eq("public", true);
 
     if (search.value !== "") {
@@ -147,8 +159,45 @@ const { data: datasets, pending } = await useAsyncData(
       };
     }
 
+    // Get the current user
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    if (!user) {
+      return {
+        data: data.map((dataset) => ({
+          ...toDataset(dataset),
+          isStarred: false,
+          starCount: dataset.stars?.[0]?.count || 0,
+        })),
+        total: count,
+      };
+    }
+
+    // Get which datasets the user has starred
+    const { data: userStars } = await client
+      .from("stars")
+      .select("dataset_id")
+      .eq("user_id", user.id)
+      .in(
+        "dataset_id",
+        data.map((d) => d.id)
+      );
+
+    // Create set for quick lookup
+    const starredDatasetIds = new Set(
+      (userStars || []).map((s) => s.dataset_id)
+    );
+
+    // Transform datasets with star data
+    const transformedData = data.map((dataset) => ({
+      ...toDataset(dataset),
+      isStarred: starredDatasetIds.has(dataset.id),
+      starCount: dataset.stars?.[0]?.count || 0,
+    }));
+
     return {
-      data: data.map(toDataset),
+      data: transformedData,
       total: count,
     };
   },

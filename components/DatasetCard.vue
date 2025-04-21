@@ -11,9 +11,11 @@ import {
 } from "~/components/ui/card";
 import type { Dataset } from "~/utils/mapDataset";
 
-defineProps({
+const props = defineProps({
   dataset: {
-    type: Object as PropType<Dataset>,
+    type: Object as PropType<
+      Dataset & { isStarred: boolean; starCount: number }
+    >,
   },
 });
 
@@ -56,7 +58,12 @@ const pageContext = inject<PageContext>("page-context", "dashboard");
         </p>
       </CardContent>
       <CardFooter class="flex justify-between items-center mt-auto">
-        <DatasetStar :dataset-id="dataset.id" :icon-only="true" />
+        <DatasetStar
+          :dataset-id="dataset.id"
+          :icon-only="true"
+          :is-starred="dataset.isStarred"
+          :star-count="dataset.starCount"
+        />
         <p class="text-sm text-muted-foreground">
           {{ formatBytes(dataset.size) }}
         </p>

@@ -31,37 +31,17 @@ import type { Database } from "~/database.types";
 const props = defineProps<{
   datasetId: string;
   iconOnly?: boolean;
+  isStarred: boolean;
+  starCount: number;
+}>();
+
+const emit = defineEmits<{
+  (e: "update:isStarred", value: boolean): void;
+  (e: "update:starCount", value: number): void;
 }>();
 
 const client = useSupabaseClient<Database>();
-
-const isStarred = ref(false);
-const isLoading = ref(true);
-const starCount = ref<number>(0);
-
-onMounted(async () => {
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  if (!user) return;
-
-  const { data } = await client
-    .from("stars")
-    .select()
-    .eq("dataset_id", props.datasetId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  isStarred.value = data !== null;
-  isLoading.value = false;
-
-  const { count } = await client
-    .from("stars")
-    .select("dataset_id", { count: "exact" })
-    .eq("dataset_id", props.datasetId);
-
-  starCount.value = count ?? 0;
-});
+const isLoading = ref(false);
 
 const toggleStar = async () => {
   const {
@@ -71,23 +51,23 @@ const toggleStar = async () => {
 
   isLoading.value = true;
 
-  if (isStarred.value) {
+  if (props.isStarred) {
     await client
       .from("stars")
       .delete()
       .eq("dataset_id", props.datasetId)
       .eq("user_id", user.id);
 
-    isStarred.value = false;
-    starCount.value -= 1;
+    emit("update:isStarred", false);
+    emit("update:starCount", props.starCount - 1);
   } else {
     await client.from("stars").insert({
       dataset_id: props.datasetId,
       user_id: user.id,
     });
 
-    isStarred.value = true;
-    starCount.value += 1;
+    emit("update:isStarred", true);
+    emit("update:starCount", props.starCount + 1);
   }
 
   isLoading.value = false;
