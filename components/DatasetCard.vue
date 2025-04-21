@@ -30,7 +30,9 @@ const pageContext = inject<PageContext>("page-context", "dashboard");
     <template v-if="dataset">
       <CardHeader class="pb-2">
         <div class="flex justify-between items-center">
-          <CardTitle class="text-base">{{ dataset.name }}</CardTitle>
+          <CardTitle class="text-base">
+            {{ dataset.metadata.tables[0]["dc:title"] }}
+          </CardTitle>
           <Icon
             v-if="pageContext !== 'browse'"
             :icon="
