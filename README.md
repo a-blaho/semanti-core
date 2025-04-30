@@ -3,7 +3,7 @@ A CSV annotation tool using Nuxt3, Supabase and shad/cn with Tailwind CSS.
 
 ## Setup
  1. Create .env in the root dir with `SUPABASE_URL` & `SUPABASE_KEY`.
- 2. Run the following commands in the root
+ 2. Run the following commands in the root folder
 ```
 npm install
 
