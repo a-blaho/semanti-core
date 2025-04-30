@@ -1,5 +1,5 @@
 # semanti/core
-A CSV annotation tool using Nuxt3, Supabase and Headless UI with Tailwind CSS.
+A CSV annotation tool using Nuxt3, Supabase and shad/cn with Tailwind CSS.
 
 ## Setup
  1. Create .env in the root dir with `SUPABASE_URL` & `SUPABASE_KEY`.
