@@ -132,7 +132,7 @@ For numbers, use these formats:
 
 For strings, use these formats:
 - "text" (general text)
-- "category" (categorical)
+- "categorical" (categorical data)
 - "binary" (two values)
 - "identifier" (unique IDs)
 - "email" (emails)

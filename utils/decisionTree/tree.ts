@@ -1,4 +1,5 @@
 import { countries } from "./countries";
+import { isoCountryCodes } from "./isoCountryCodes";
 import { languages } from "./languages";
 import type { ColumnAnalysis, ColumnData, DecisionTreeNode } from "./types";
 import {
@@ -10,6 +11,7 @@ import {
 
 const countrySet = new Set(countries.map((item) => item.toLowerCase()));
 const languageSet = new Set(languages.map((item) => item.toLowerCase()));
+const isoCountryCodeSet = new Set(isoCountryCodes);
 
 interface RegexPattern {
   name: string;
@@ -29,7 +31,10 @@ const regexPatterns: RegexPattern[] = [
   {
     name: "datetime",
     patterns: [
-      /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d{3})?(Z|[+-]\d{2}:?\d{2})?$/,
+      /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2})?(\.\d{3})?(Z|[+-]\d{2}:?\d{2})?$/, // ISO
+      /^\d{1,2}\/\d{1,2}\/\d{4} \d{2}:\d{2}(:\d{2})?$/, // US format with time
+      /^\d{1,2}\.\d{1,2}\.\d{4} \d{2}:\d{2}(:\d{2})?$/, // EU format with time
+      /^\d{1,2}-\d{1,2}-\d{4} \d{2}:\d{2}(:\d{2})?$/, // With dashes and time
     ],
   },
   {
@@ -105,7 +110,17 @@ function isBinaryData(values: string[]): boolean {
 }
 
 function isNumericData(values: string[]): boolean {
-  return values.every((v) => !isNaN(Number(v)));
+  return values.every((v) => {
+    // Remove any whitespace
+    const trimmed = v.trim();
+    if (!trimmed) return true; // Skip empty values
+
+    // Handle comma-separated numbers
+    const normalized = trimmed.replace(/,/g, ".");
+
+    // Check if it's a valid number
+    return !isNaN(Number(normalized));
+  });
 }
 
 function isInteger(values: string[]): boolean {
@@ -148,17 +163,198 @@ function isCurrency(values: string[], header: string): boolean {
 }
 
 function calculateMatchRatio(values: string[], validSet: Set<string>): number {
+  const start = performance.now();
   if (values.length === 0) return 0;
-  const matches = values.filter((v) => validSet.has(v.toLowerCase()));
+
+  // If the valid set is too large, use a more efficient matching strategy
+  const LARGE_SET_THRESHOLD = 1000;
+  const isLargeSet = validSet.size > LARGE_SET_THRESHOLD;
+
+  // Pre-process the valid set for faster lookups
+  const normalizedValidSet = new Set(
+    Array.from(validSet).map((v) => v.toLowerCase().trim())
+  );
+
+  // For large sets, create a map of first words to speed up partial matching
+  const firstWordMap = isLargeSet ? new Map<string, Set<string>>() : null;
+  if (isLargeSet) {
+    const mapStart = performance.now();
+    for (const item of normalizedValidSet) {
+      const firstWord = item.split(/\s+/)[0];
+      if (!firstWordMap!.has(firstWord)) {
+        firstWordMap!.set(firstWord, new Set());
+      }
+      firstWordMap!.get(firstWord)!.add(item);
+    }
+  }
+
+  // Pre-process values to avoid repeated operations
+  const processStart = performance.now();
+  const processedValues = values.map((v) => {
+    const normalized = v.toLowerCase().trim();
+    const upper = v.toUpperCase().trim();
+    const clean = normalized
+      .replace(/[.,]/g, "")
+      .replace(/\b(the|and|of|&)\b/g, "")
+      .trim();
+    const firstWord = normalized.split(/\s+/)[0];
+
+    // Cache the cleaned valid items for this value
+    const cleanedValidItems = new Map<string, string>();
+
+    return {
+      normalized,
+      upper,
+      clean,
+      firstWord,
+      cleanedValidItems,
+    };
+  });
+
+  const matchStart = performance.now();
+  const matches = processedValues.filter(
+    ({ normalized, upper, clean, firstWord, cleanedValidItems }) => {
+      // Check for exact match first (fastest)
+      if (normalizedValidSet.has(normalized)) return true;
+
+      // Check for ISO country codes
+      if (isoCountryCodeSet.has(upper)) {
+        return true;
+      }
+
+      // For large sets, use the first word map to reduce comparisons
+      if (isLargeSet && firstWordMap!.has(firstWord)) {
+        const potentialMatches = firstWordMap!.get(firstWord)!;
+        for (const validItem of potentialMatches) {
+          if (clean.includes(validItem) || validItem.includes(clean)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      // For small sets, do full comparison
+      let comparisonCount = 0;
+      for (const validItem of normalizedValidSet) {
+        comparisonCount++;
+
+        // Get or create the cleaned version of this valid item
+        let cleanValidItem = cleanedValidItems.get(validItem);
+        if (!cleanValidItem) {
+          cleanValidItem = validItem
+            .replace(/[.,]/g, "")
+            .replace(/\b(the|and|of|&)\b/g, "")
+            .trim();
+          cleanedValidItems.set(validItem, cleanValidItem);
+        }
+
+        // Quick substring check first
+        if (clean.includes(cleanValidItem) || cleanValidItem.includes(clean)) {
+          return true;
+        }
+
+        // Only do word overlap if substring check fails
+        const valueWords = clean.split(/\s+/);
+        const validItemWords = cleanValidItem.split(/\s+/);
+        const minWords = Math.min(valueWords.length, validItemWords.length);
+
+        if (minWords > 0) {
+          const commonWords = valueWords.filter((word) =>
+            validItemWords.includes(word)
+          );
+          if (commonWords.length / minWords >= 0.5) {
+            return true;
+          }
+        }
+      }
+      if (comparisonCount > 1000) {
+      }
+      return false;
+    }
+  );
   return matches.length / values.length;
+}
+
+function isValidDate(dateStr: string): boolean {
+  const start = performance.now();
+  // Try parsing as ISO date first
+  const isoDate = new Date(dateStr);
+  if (!isNaN(isoDate.getTime())) {
+    return true;
+  }
+
+  // Try parsing as US format (MM/DD/YYYY)
+  const usParts = dateStr.split("/");
+  if (usParts.length === 3) {
+    const usDate = new Date(`${usParts[2]}-${usParts[0]}-${usParts[1]}`);
+    if (!isNaN(usDate.getTime())) {
+      return true;
+    }
+  }
+
+  // Try parsing as EU format (DD.MM.YYYY)
+  const euParts = dateStr.split(".");
+  if (euParts.length === 3) {
+    const euDate = new Date(`${euParts[2]}-${euParts[1]}-${euParts[0]}`);
+    if (!isNaN(euDate.getTime())) {
+      return true;
+    }
+  }
+
+  // Try parsing as dash format (DD-MM-YYYY)
+  const dashParts = dateStr.split("-");
+  if (dashParts.length === 3) {
+    const dashDate = new Date(
+      `${dashParts[2]}-${dashParts[1]}-${dashParts[0]}`
+    );
+    if (!isNaN(dashDate.getTime())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isValidDateTime(dateTimeStr: string): boolean {
+  // Split date and time parts
+  const [datePart, timePart] = dateTimeStr.split(" ");
+
+  if (!datePart || !timePart) return false;
+
+  // Check if date part is valid
+  if (!isValidDate(datePart)) return false;
+
+  // Check time format (HH:MM:SS)
+  const timeRegex = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+  return timeRegex.test(timePart);
 }
 
 function checkRegexPatterns(
   values: string[]
 ): { format: string; matchRatio: number } | null {
   const MATCH_THRESHOLD = 0.8;
+  const start = performance.now();
 
+  // First check for dates and datetimes using the more reliable validation
+  const dateMatchCount = values.filter((v) => isValidDate(v)).length;
+  const dateTimeMatchCount = values.filter((v) => isValidDateTime(v)).length;
+
+  if (dateTimeMatchCount / values.length >= MATCH_THRESHOLD) {
+    return {
+      format: "datetime",
+      matchRatio: dateTimeMatchCount / values.length,
+    };
+  }
+
+  if (dateMatchCount / values.length >= MATCH_THRESHOLD) {
+    return { format: "date", matchRatio: dateMatchCount / values.length };
+  }
+
+  // Then check other patterns
   for (const { name, patterns } of regexPatterns) {
+    // Skip date and datetime patterns since we already checked them
+    if (name === "date" || name === "datetime") continue;
+
     const matchCount = values.filter((v) =>
       patterns.some((pattern) => pattern.test(v))
     ).length;
@@ -212,7 +408,7 @@ function analyzeNumericData(values: string[], header: string): ColumnAnalysis {
     calculateConfidence(values, "number", format, stats),
     values.filter((v) => !v).length / values.length,
     stats,
-    values.slice(0, 5),
+    Array.from(new Set(values)).slice(0, 5),
     mainReason,
     details
   );
@@ -232,7 +428,7 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
         countryMatchRatio,
       values.filter((v) => !v).length / values.length,
       textStats,
-      values.slice(0, 5),
+      Array.from(new Set(values)).slice(0, 5),
       "Country names pattern detected",
       [
         `Match ratio: ${(countryMatchRatio * 100).toFixed(1)}%`,
@@ -252,7 +448,7 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
         languageMatchRatio,
       values.filter((v) => !v).length / values.length,
       textStats,
-      values.slice(0, 5),
+      Array.from(new Set(values)).slice(0, 5),
       "Language names pattern detected",
       [
         `Match ratio: ${(languageMatchRatio * 100).toFixed(1)}%`,
@@ -272,7 +468,7 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
         patternMatch.matchRatio,
       values.filter((v) => !v).length / values.length,
       textStats,
-      values.slice(0, 5),
+      Array.from(new Set(values)).slice(0, 5),
       `${patternMatch.format.charAt(0).toUpperCase() + patternMatch.format.slice(1)} pattern detected`,
       [
         `Match ratio: ${(patternMatch.matchRatio * 100).toFixed(1)}%`,
@@ -336,7 +532,7 @@ function analyzeTextData(values: string[], header: string): ColumnAnalysis {
     calculateConfidence(values, "string", format, textStats),
     values.filter((v) => !v).length / values.length,
     textStats,
-    values.slice(0, 5),
+    Array.from(new Set(values)).slice(0, 5),
     mainReason,
     details
   );
@@ -346,7 +542,7 @@ function analyzeColumnName(
   header: string,
   sampleValues: string[]
 ): ColumnAnalysis | null {
-  if (/\bid\b/i.test(header)) {
+  if (/\bid\b|id$/i.test(header)) {
     return createAnalysis(
       header,
       "string",
@@ -354,7 +550,7 @@ function analyzeColumnName(
       calculateConfidence(sampleValues, "string", "identifier", null),
       0,
       null,
-      sampleValues.slice(0, 5),
+      Array.from(new Set(sampleValues)).slice(0, 5),
       "Identifier column pattern detected from header",
       [
         'Column name contains "ID"',
@@ -372,7 +568,7 @@ function analyzeColumnName(
       calculateConfidence(sampleValues, "number", "decimal", null),
       0,
       null,
-      sampleValues.slice(0, 5),
+      Array.from(new Set(sampleValues)).slice(0, 5),
       "Latitude coordinate column pattern detected from header",
       [
         "Column name contains latitude-related terms",
@@ -390,7 +586,7 @@ function analyzeColumnName(
       calculateConfidence(sampleValues, "number", "decimal", null),
       0,
       null,
-      sampleValues.slice(0, 5),
+      Array.from(new Set(sampleValues)).slice(0, 5),
       "Longitude coordinate column pattern detected from header",
       [
         "Column name contains longitude-related terms",
@@ -408,7 +604,7 @@ function analyzeColumnName(
       calculateConfidence(sampleValues, "number", "year", null),
       0,
       null,
-      sampleValues.slice(0, 5),
+      Array.from(new Set(sampleValues)).slice(0, 5),
       "Year column pattern detected from header",
       [
         "Column name contains year-related terms",
@@ -426,7 +622,7 @@ function analyzeColumnName(
       calculateConfidence(sampleValues, "number", "age", null),
       0,
       null,
-      sampleValues.slice(0, 5),
+      Array.from(new Set(sampleValues)).slice(0, 5),
       "Age column pattern detected from header",
       [
         "Column name contains age-related terms",
@@ -448,7 +644,7 @@ function analyzeColumnName(
       calculateConfidence(sampleValues, "number", "currency", null),
       0,
       null,
-      sampleValues.slice(0, 5),
+      Array.from(new Set(sampleValues)).slice(0, 5),
       "Currency column pattern detected from header",
       [
         "Column name contains financial terms",
@@ -481,7 +677,7 @@ export function createDecisionTree(): DecisionTreeNode {
             0,
             data.missingValueRatio,
             null,
-            data.sampleValues,
+            Array.from(new Set(data.sampleValues)).slice(0, 5),
             "High proportion of missing values detected",
             [
               `Missing value ratio: ${(data.missingValueRatio * 100).toFixed(1)}%`,
@@ -574,7 +770,7 @@ export function analyzeColumn(data: ColumnData): ColumnAnalysis {
     0,
     data.missingValueRatio,
     null,
-    data.sampleValues,
+    Array.from(new Set(data.sampleValues)).slice(0, 5),
     "Data pattern analysis inconclusive",
     [
       "No clear pattern detected in the data",

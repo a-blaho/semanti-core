@@ -33,7 +33,7 @@
     <div v-if="stage === 1" class="flex flex-col items-center w-full gap-4">
       <div class="flex items-center gap-4 w-full max-w-3xl justify-end">
         <div class="flex items-center space-x-2">
-          <Switch v-model="useOpenAI" />
+          <Switch id="use-ai" v-model="useOpenAI" />
           <label
             for="use-ai"
             class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -155,7 +155,7 @@
           <div class="flex items-center gap-2">
             <label
               class="text-sm truncate text-foreground"
-              :for="column + '-' + index"
+              :for="'column-' + index"
             >
               {{ columns[index] }}
             </label>
@@ -171,6 +171,7 @@
           </div>
 
           <Input
+            :id="'column-' + index"
             :name="'name-' + index"
             placeholder="Name"
             v-model="names[index]"
@@ -520,7 +521,13 @@ const processFiles = async (files: FileList | undefined | null) => {
   }).data.slice(0, 6); // Get headers + 5 rows for analysis
 
   columns.value = parsedData[0];
+  console.log(columns.value.map((c) => c).join("\n"));
   analysisResults.value = detectDataTypes(fileContent);
+  console.log(
+    analysisResults.value
+      .map(({ dataType, dataFormat }) => `${dataType},${dataFormat}`)
+      .join("\n")
+  );
 
   if (useOpenAI.value) {
     try {
@@ -537,6 +544,12 @@ const processFiles = async (files: FileList | undefined | null) => {
         (progress: { status: string; percent: number }) => {
           analysisProgress.value = progress;
         }
+      );
+
+      console.log(
+        analysis.columns
+          .map((col: ColumnMetadata) => `${col.dataType},${col.category}`)
+          .join("\n")
       );
 
       // Update form fields with generated metadata
@@ -696,21 +709,21 @@ const uploadDataset = async () => {
   }
 };
 
-const handleClickOutside = (e: MouseEvent) => {
-  if (
-    previewIndex.value !== null &&
-    !(e.target as HTMLElement).closest(".w-96") &&
-    !(e.target as HTMLElement).closest("button")
-  ) {
-    previewIndex.value = null;
-  }
-};
+// const handleClickOutside = (e: MouseEvent) => {
+//   if (
+//     previewIndex.value !== null &&
+//     // !(e.target as HTMLElement).closest(".max-w-4xl") &&
+//     !(e.target as HTMLElement).closest("button")
+//   ) {
+//     previewIndex.value = null;
+//   }
+// };
 
-onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
+// onMounted(() => {
+//   document.addEventListener("click", handleClickOutside);
+// });
 
-onUnmounted(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+// onUnmounted(() => {
+//   document.removeEventListener("click", handleClickOutside);
+// });
 </script>

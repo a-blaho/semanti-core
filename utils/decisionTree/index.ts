@@ -24,9 +24,13 @@ export function detectDataTypes(
       (v) => !v || v.trim() === "" || v.trim().toUpperCase() === "NULL"
     ).length;
     const missingValueRatio = missingValues / columnData.length;
-    const sampleValues = columnData
-      .filter((v) => v && v.trim() !== "" && v.trim().toUpperCase() !== "NULL")
-      .slice(0, 5);
+    const sampleValues = Array.from(
+      new Set(
+        columnData.filter(
+          (v) => v && v.trim() !== "" && v.trim().toUpperCase() !== "NULL"
+        )
+      )
+    ).slice(0, 5);
 
     return analyzeColumn({
       header: headers[index],

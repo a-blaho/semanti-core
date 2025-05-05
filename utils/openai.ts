@@ -31,7 +31,9 @@ export async function analyzeDataset(
       },
       body: JSON.stringify({
         fileName,
-        sampleData,
+        sampleData: sampleData.map((row) =>
+          row.map((cell) => cell.substring(0, 1000))
+        ),
         columnAnalysis,
       }),
     });

@@ -31,6 +31,7 @@
               :disabled="emailSent"
               ref="emailInput"
               @input="validateEmail"
+              @change="validateEmail"
             />
             <Input
               v-if="emailSent"
@@ -89,7 +90,7 @@ const token = ref("");
 const emailSent = ref(false);
 const isValidEmail = ref(false);
 const isValidToken = ref(false);
-const emailInput = ref<HTMLInputElement | null>(null);
+const emailInput = ref<{ $el: HTMLInputElement } | null>(null);
 const isLoading = ref(false);
 const errorMessage = ref("");
 
@@ -188,6 +189,8 @@ const signInWithGitHub = async () => {
 onMounted(() => {
   if (emailInput.value) {
     emailInput.value.$el.focus();
+    // Check email validation on mount in case of autofill
+    validateEmail();
   }
 
   client.auth.onAuthStateChange((event, session) => {
